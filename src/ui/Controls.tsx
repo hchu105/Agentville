@@ -8,11 +8,13 @@ export const AUTONOMY_LABELS: Record<Autonomy, { short: string; long: string }> 
   3: { short: 'Just do it', long: 'Works on its own and reports back on a receipt' },
 }
 
-/** A little 2D vinyl badge that matches the 3D resident. */
-export function Avatar({ agent, size = 36 }: { agent: Pick<AgentState, 'color' | 'accent' | 'name'>; size?: number }) {
+const heads = import.meta.glob('../assets/world/head_*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
+
+/** Headshot rendered from the same model as the resident, on the resident's color. */
+export function Avatar({ agent, size = 36 }: { agent: Pick<AgentState, 'id' | 'color' | 'accent' | 'name'>; size?: number }) {
   return (
     <span className="avatar" style={{ '--c': agent.color, '--a': agent.accent, width: size, height: size } as CSSProperties} aria-hidden>
-      <span className="avatar__eyes" />
+      <img src={heads[`../assets/world/head_${agent.id}.webp`]} alt="" draggable={false} />
     </span>
   )
 }

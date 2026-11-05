@@ -181,11 +181,7 @@ export interface Pose {
   arrive: (() => void) | null
 }
 
-export const doorOf = (b: BuildingId) => {
-  const d = BUILDINGS.find((x) => x.id === b)!
-  const len = Math.hypot(d.x, d.z)
-  return { x: d.x - (d.x / len) * 1.75, z: d.z - (d.z / len) * 1.75 }
-}
+export const doorOf = (b: BuildingId) => BUILDINGS.find((x) => x.id === b)!.stop
 
 const homeOf = (agentId: string) => {
   const i = AGENTS.findIndex((a) => a.id === agentId)
@@ -193,8 +189,23 @@ const homeOf = (agentId: string) => {
   return { x: Math.cos(ang) * 2.1, z: Math.sin(ang) * 2.1 }
 }
 
+type Pt = { x: number; z: number }
+const gateNear = (p: Pt) => BUILDINGS.find((b) => Math.hypot(b.stop.x - p.x, b.stop.z - p.z) < 1.5)?.gate
+
+/** Leave through the station's gate, cross the plaza, come in through the next gate. */
+function route(from: Pt, to: Pt) {
+  const stops = [gateNear(from), gateNear(to), to].filter((p): p is Pt => !!p)
+  const path: Pt[] = []
+  let at = from
+  for (const p of stops) {
+    path.push(...leg(at, p))
+    at = p
+  }
+  return path
+}
+
 /** Straight line, but detour around the central job board. */
-function route(from: { x: number; z: number }, to: { x: number; z: number }) {
+function leg(from: Pt, to: Pt) {
   const dx = to.x - from.x
   const dz = to.z - from.z
   const len2 = dx * dx + dz * dz || 1
@@ -216,7 +227,7 @@ function route(from: { x: number; z: number }, to: { x: number; z: number }) {
   return [to]
 }
 
-const WALK_SPEED = 2.4
+const WALK_SPEED = 1.7
 
 export const runtime = {
   poses: Object.fromEntries(

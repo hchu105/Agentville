@@ -31,7 +31,7 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 
 | In the village | What it really is |
 |---|---|
-| Resident (vinyl toy with role prop) | An agent: role, memory, track record |
+| Resident (a person dressed in their color) | An agent: role, memory, track record |
 | Building | A connected tool or integration |
 | Walking to a building | A live tool call |
 | Pulsing orange LED on a building | That tool is in use right now |
@@ -42,23 +42,23 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 | Autonomy dial (locked detents) | Permission level, earned through trust |
 | Spent counter | Real token or dollar budget |
 
-## Art direction: "a toy inside a precision instrument"
+## Art direction: "a calm studio inside a precision instrument"
 
-The world is **soft and playful**: vinyl, felt, painted wood, glazed ceramic. The controls are **precise and industrial**: anodized aluminum, rubber keys, a dot-matrix display, one signal orange. The split carries meaning: playful agents, serious consequences.
+The world is **warm and lived-in**: realistic people among soft furniture on a seamless off-white floor, photographed like a design catalogue. The controls are **precise and industrial**: anodized aluminum, rubber keys, a dot-matrix display, one signal orange. The split carries meaning: human agents, serious consequences.
 
 **Materials as tokens.** Each has one job:
 
 | Material | Used for | Meaning |
 |---|---|---|
-| Soft-matte vinyl (clearcoat + sheen) | Residents | Personality |
-| Felt (sheen + fibre bump) | Ground, foliage, awnings | The world |
-| Painted wood | Buildings | Tools |
+| Woven fabric and everyday clothes | Residents | Personality |
+| Rugs, soft furnishings, plants | Stations and floor | The world |
+| Oak and painted wood | Station furniture | Tools |
 | Frosted acrylic with lit edge | Panels, glass, labels | Information |
-| Anodized aluminum + rubber | Plinth, deck, keys, dial | Your authority |
+| Anodized aluminum + rubber | Deck, keys, dial | Your authority |
 | Thermal paper / index cards | Receipts, job cards, documents | Real output |
 | Glazed ceramic | The shop's own products | The business itself |
 
-**3D for identity and moments, 2D for information.** 3D is reserved for the residents, buildings and hero moments (delivery, level-up). Dense information is always flat, readable UI.
+**3D for identity and moments, 2D for information.** The rendered world is reserved for the residents, stations and hero moments (delivery, level-up). Dense information is always flat, readable UI.
 
 **Signal orange** (`#FF5A1F`) means exactly one thing: *this needs you or is happening now.*
 
@@ -66,11 +66,15 @@ The world is **soft and playful**: vinyl, felt, painted wood, glazed ceramic. Th
 
 **Sound.** Synthesized clicks, detents, a stamp thunk and receipt-printer chatter. Off by default.
 
-## 3D pipeline without Blender
+## World pipeline
 
-1. **Now: procedural shapes plus real materials and studio lighting** (this prototype). Physically based materials (clearcoat, sheen, transmission, anisotropic metal), procedural noise textures, a code-built softbox environment, ambient occlusion and selective bloom. Quality comes from materials and light, not polygon count.
-2. **Next: AI image-to-3D for hero characters.** Art-direct residents as 2D turnaround sheets, generate GLB files with an image-to-3D tool (Meshy, Tripo, Rodin), clean up and drop them into `src/scene/Agent.tsx`. Keep the procedural material system so generated models match the world.
-3. **Later: an in-browser path tracer for hero stills** (marketing, onboarding, the "agent minted" moment) using the same scene.
+The world is prerendered, not rendered live. Blender Cycles renders one locked orthographic view and the browser composites the results, so soft light, shadows and fabric look the same on every device.
+
+1. **`art/` renders the world.** `render.py` builds stations and residents, and `pack.py` writes web assets and `manifest.json` to `src/assets/world/`. See [art/README.md](../art/README.md).
+2. **Current art is a blockout.** Stations are Blender primitives and residents are mannequins, at final scale and in final positions, so the engine is real while the art is not.
+3. **Next: AI-generated meshes.** Generate stations with Tripo or Rodin and residents with Meshy, then replace the matching builders in `art/world.py` and `art/resident.py`. Use shared Blender materials instead of AI textures, so the set looks like one world.
+
+Nothing in `src/sim` depends on this. Each station's position, stop and gate live in `src/sim/data.ts`.
 
 ## Architecture
 
@@ -89,7 +93,7 @@ Agent runtime ──events──▶ store (event log + state) ──▶ village 
 3. **Hire flow:** a capsule machine where you dial in role, tone and starting autonomy, with a 3D "minting" moment
 4. **Build flow:** connecting an integration = placing a building
 5. **Overnight mode:** real day/night; lit windows mean work in progress; morning receipt roll as the daily digest
-6. **Hero characters** via image-to-3D
+6. **Final art:** AI-generated stations and residents in place of the blockout
 
 ## What we're testing
 

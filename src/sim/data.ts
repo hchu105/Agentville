@@ -17,7 +17,6 @@ export const AGENTS: AgentDef[] = [
     blurb: 'Writes listings, product stories and SEO titles in the Moss & Kiln voice.',
     color: '#E8664A',
     accent: '#7A2E1F',
-    prop: 'beret',
   },
   {
     id: 'juno',
@@ -26,7 +25,6 @@ export const AGENTS: AgentDef[] = [
     blurb: 'Retouches product shots, builds banners and keeps the shop looking consistent.',
     color: '#3E9C93',
     accent: '#16433F',
-    prop: 'camera',
   },
   {
     id: 'scout',
@@ -35,7 +33,6 @@ export const AGENTS: AgentDef[] = [
     blurb: 'Watches trends, competitor pricing and search terms across Etsy and the web.',
     color: '#E3B23C',
     accent: '#6B4E0E',
-    prop: 'antenna',
   },
   {
     id: 'bea',
@@ -44,9 +41,10 @@ export const AGENTS: AgentDef[] = [
     blurb: 'Drafts newsletters, answers customer messages and schedules posts.',
     color: '#8C8FE0',
     accent: '#2F3277',
-    prop: 'satchel',
   },
 ]
+
+type Point = { x: number; z: number }
 
 export interface BuildingDef {
   id: BuildingId
@@ -54,16 +52,22 @@ export interface BuildingDef {
   tool: string
   x: number
   z: number
+  /** Where a resident stands to use this station. */
+  stop: Point
+  /** Clear spot on the plaza edge, so nobody walks through the furniture. */
+  gate: Point
+  labelY: number
 }
 
-// Buildings are tools. An agent walking to the Post Office is an email tool call.
+// Buildings are tools, shown as furnished stations. An agent walking to the Post Office is an
+// email tool call. x and z must match STATIONS in art/world.py.
 export const BUILDINGS: BuildingDef[] = [
-  { id: 'desk', name: "Rae's Desk", tool: 'Approvals & delivery', x: 0, z: -5.2 },
-  { id: 'lookout', name: 'Lookout', tool: 'Web & trend research', x: -5.4, z: -4.2 },
-  { id: 'library', name: 'Library', tool: 'Brand guide & docs', x: 5.3, z: -4.0 },
-  { id: 'studio', name: 'Photo Studio', tool: 'Image editing', x: -5.8, z: 1.6 },
-  { id: 'post', name: 'Post Office', tool: 'Email & messages', x: 5.8, z: 1.4 },
-  { id: 'market', name: 'Shop Stall', tool: 'Etsy listings', x: -1.2, z: 5.6 },
+  { id: 'desk', name: "Rae's Desk", tool: 'Approvals & delivery', x: 0, z: -5.2, stop: { x: 0, z: -4.3 }, gate: { x: 0, z: -3.2 }, labelY: 1.9 },
+  { id: 'lookout', name: 'Lookout', tool: 'Web & trend research', x: -5.4, z: -4.2, stop: { x: -3.7, z: -4.2 }, gate: { x: -3.2, z: -3 }, labelY: 2.3 },
+  { id: 'library', name: 'Library', tool: 'Brand guide & docs', x: 5.3, z: -4.0, stop: { x: 5, z: -3 }, gate: { x: 3.6, z: -1.9 }, labelY: 2.4 },
+  { id: 'studio', name: 'Photo Studio', tool: 'Image editing', x: -5.8, z: 1.6, stop: { x: -4.6, z: 1.9 }, gate: { x: -3.2, z: 1.9 }, labelY: 2.7 },
+  { id: 'post', name: 'Post Office', tool: 'Email & messages', x: 5.8, z: 1.4, stop: { x: 5.2, z: 2.2 }, gate: { x: 3.6, z: 2.2 }, labelY: 2.3 },
+  { id: 'market', name: 'Shop Stall', tool: 'Etsy listings', x: -1.2, z: 5.6, stop: { x: -1.2, z: 4.4 }, gate: { x: -1.2, z: 3.2 }, labelY: 2.5 },
 ]
 
 const tool = (building: BuildingId, label: string, seconds: number, cost: number): Step => ({

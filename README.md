@@ -1,6 +1,6 @@
 # Agentville
 
-A game-like interface for running an AI agent team. Agents live as vinyl-toy residents in a tabletop village; buildings are their tools; you approve their work with a physical stamp and get finished work as receipts.
+A game-like interface for running an AI agent team. Agents live as residents of a rendered village; furnished stations are their tools; you approve their work with a physical stamp and get finished work as receipts.
 
 The concept, design rules and art direction are in [docs/CONCEPT.md](docs/CONCEPT.md).
 
@@ -33,11 +33,13 @@ npm run build:single # one self-contained HTML file in dist-single/agentville.ht
 | `src/sim/types.ts` | The event protocol between agent runtime and village |
 | `src/sim/data.ts` | The scenario: shop, residents, buildings, jobs |
 | `src/sim/store.ts` | State (zustand) and the simulated runtime |
-| `src/scene/materials.tsx` | Material library: vinyl, felt, wood, aluminum, acrylic, ceramic |
-| `src/scene/Agent.tsx` | Residents and their animations |
-| `src/scene/Buildings.tsx` | Procedural buildings |
-| `src/scene/Village.tsx` | Plinth, lighting, camera, post-processing |
+| `src/scene/view.ts` | The locked camera, shared with `art/` |
+| `src/scene/world.ts` | Loads the rendered assets |
+| `src/scene/Village.tsx` | World image, job-board cards, camera fit |
+| `src/scene/Stations.tsx` | Station cutouts, lit states, labels |
+| `src/scene/Agent.tsx` | Resident sprites and depth order |
+| `art/` | Blender scripts that render everything in `src/assets/world/` |
 | `src/ui/*` | Panels, deck, autonomy dial, hold-to-approve, sounds |
 | `src/styles.css` | Design tokens and UI styles (light and dark) |
 
-Built with React, three.js via react-three-fiber and drei, @react-three/postprocessing, and zustand.
+Built with React, three.js via react-three-fiber and drei, and zustand. The world is rendered in Blender Cycles.

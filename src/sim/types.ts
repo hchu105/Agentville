@@ -24,7 +24,6 @@ export interface AgentDef {
   blurb: string
   color: string
   accent: string
-  prop: 'beret' | 'camera' | 'antenna' | 'satchel'
 }
 
 export interface AgentState extends AgentDef {
