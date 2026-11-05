@@ -2,7 +2,7 @@ import { useMemo, useRef, useState, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
-import { BUILDINGS, LOUNGE, type BuildingDef } from '../sim/data'
+import { BUILDINGS, LEISURE, type BuildingDef, type LeisureDef } from '../sim/data'
 import { buildingBusy, useStore } from '../sim/store'
 import type { BuildingId } from '../sim/types'
 import { Alu, Ceramic, Fabric, Glow, Plain, Wood, useRug } from './materials'
@@ -242,8 +242,7 @@ function Box({ position, size, color = P.kraft, rot = 0 }: { position: [number, 
 }
 
 /** Soft, chunky modular sofa like a catalog render. */
-function Sofa({ w = 3.2, color = P.mocha }: { w?: number; color?: string }) {
-  const seats = 3
+function Sofa({ w = 3.2, color = P.mocha, seats = 3 }: { w?: number; color?: string; seats?: number }) {
   const sw = (w - 0.5) / seats
   return (
     <group>
@@ -655,7 +654,7 @@ function Station({ def, busy, waiting }: { def: BuildingDef; busy: boolean; wait
 function Lounge() {
   const jobs = useStore((s) => s.board.length)
   return (
-    <group position={[LOUNGE.x, 0, LOUNGE.z]} rotation={[0, LOUNGE.rot, 0]}>
+    <group>
       <Rug w={4.4} d={3.4} kind="plain" a="#DDD5C6" b="#DDD5C6" />
       <group position={[0, 0, -0.55]}>
         <Sofa />
@@ -706,13 +705,246 @@ function Lounge() {
   )
 }
 
+
+function Chair({ color = P.oak }: { color?: string }) {
+  return (
+    <group>
+      <RoundedBox args={[0.46, 0.05, 0.44]} radius={0.015} position={[0, 0.45, 0]} castShadow receiveShadow>
+        <Wood color={color} />
+      </RoundedBox>
+      <RoundedBox args={[0.46, 0.3, 0.04]} radius={0.015} position={[0, 0.78, -0.2]} castShadow>
+        <Wood color={color} />
+      </RoundedBox>
+      {[
+        [-1, -1],
+        [1, -1],
+        [-1, 1],
+        [1, 1],
+      ].map(([x, z], i) => (
+        <mesh key={i} position={[x * 0.19, 0.22, z * 0.18]} castShadow>
+          <cylinderGeometry args={[0.018, 0.016, 0.44, 8]} />
+          <Wood color={color} />
+        </mesh>
+      ))}
+      {[-1, 1].map((x) => (
+        <mesh key={x} position={[x * 0.19, 0.62, -0.2]}>
+          <cylinderGeometry args={[0.016, 0.016, 0.36, 8]} />
+          <Wood color={color} />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+function Cafe() {
+  return (
+    <group>
+      <Rug w={3.0} d={2.0} kind="stripe" a="#E8E2D6" b="#D9CDB8" cells={16} />
+      <group position={[0, 0, -0.35]}>
+        <RoundedBox args={[2.2, 0.92, 0.6]} radius={0.03} position={[0, 0.46, 0]} castShadow receiveShadow>
+          <Plain color={P.sky} rough={0.6} />
+        </RoundedBox>
+        <RoundedBox args={[2.3, 0.05, 0.66]} radius={0.015} position={[0, 0.945, 0]} castShadow receiveShadow>
+          <Wood color={P.oak} />
+        </RoundedBox>
+        {/* espresso machine */}
+        <group position={[0.45, 0.97, -0.05]}>
+          <RoundedBox args={[0.42, 0.36, 0.32]} radius={0.04} position={[0, 0.18, 0]} castShadow>
+            <Alu color="#d9d6d0" />
+          </RoundedBox>
+          <mesh position={[-0.08, 0.1, 0.17]}>
+            <cylinderGeometry args={[0.03, 0.03, 0.06, 12]} />
+            <Plain color={P.ink} />
+          </mesh>
+          <mesh position={[0.12, 0.28, 0.165]}>
+            <circleGeometry args={[0.03, 16]} />
+            <Glow color={P.signal} intensity={1.2} />
+          </mesh>
+        </group>
+        <Pots position={[-0.45, 0.97, 0.05]} colors={['#EDE3D1', '#B5532F', '#EDE3D1']} />
+        <Plant position={[-0.95, 0.97, -0.05]} s={0.5} pot={P.white} />
+      </group>
+    </group>
+  )
+}
+
+function Meeting() {
+  return (
+    <group>
+      <Rug w={3.0} d={3.0} kind="border" a="#E7DFD0" b="#8F9F7A" round />
+      <mesh position={[0, 0.72, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.7, 0.7, 0.05, 48]} />
+        <Wood color={P.maroon} />
+      </mesh>
+      <mesh position={[0, 0.36, 0]} castShadow>
+        <cylinderGeometry args={[0.08, 0.1, 0.7, 16]} />
+        <Wood color={P.maroon} />
+      </mesh>
+      <mesh position={[0, 0.02, 0]}>
+        <cylinderGeometry args={[0.35, 0.35, 0.04, 32]} />
+        <Wood color={P.maroon} />
+      </mesh>
+      {[0, 1, 2, 3].map((i) => {
+        const a = (i / 4) * Math.PI * 2
+        return (
+          <group key={i} position={[Math.sin(a) * 1.0, 0, Math.cos(a) * 1.0]} rotation={[0, a + Math.PI, 0]}>
+            <Chair />
+          </group>
+        )
+      })}
+      <mesh position={[0.15, 0.8, 0.1]} castShadow>
+        <cylinderGeometry args={[0.07, 0.05, 0.12, 20]} />
+        <Ceramic color={P.cream} />
+      </mesh>
+      <Box position={[-0.2, 0.76, -0.15]} size={[0.3, 0.02, 0.22]} color={P.white} rot={0.4} />
+    </group>
+  )
+}
+
+function Records() {
+  const sleeves = useMemo(() => {
+    const cols = ['#C2453A', '#2F3B4C', '#D9B44A', '#8F9F7A', '#EFE9DE', '#E3B7AA', '#5E9A92', '#262422']
+    return Array.from({ length: 22 }, (_, i) => ({ x: -0.72 + i * 0.066, c: cols[(i * 5) % cols.length], tilt: (i % 5) * 0.03 }))
+  }, [])
+  return (
+    <group>
+      <Rug w={3.2} d={2.4} kind="plain" a="#E2D7C4" b="#E2D7C4" />
+      <group position={[-0.3, 0, -0.55]}>
+        <Box position={[0, 0.42, 0]} size={[1.7, 0.84, 0.42]} color="#D9CDB8" />
+        {sleeves.map((sl, i) => (
+          <mesh key={i} position={[sl.x, 0.42, 0.05]} rotation={[0, 0, sl.tilt]}>
+            <boxGeometry args={[0.012, 0.32, 0.32]} />
+            <Plain color={sl.c} rough={0.7} />
+          </mesh>
+        ))}
+        {/* turntable */}
+        <group position={[0.3, 0.85, 0]}>
+          <RoundedBox args={[0.46, 0.08, 0.36]} radius={0.015} position={[0, 0.04, 0]} castShadow>
+            <Wood color={P.walnut} />
+          </RoundedBox>
+          <mesh position={[-0.04, 0.09, 0]}>
+            <cylinderGeometry args={[0.15, 0.15, 0.012, 40]} />
+            <meshPhysicalMaterial color="#141414" roughness={0.25} clearcoat={1} />
+          </mesh>
+          <mesh position={[-0.04, 0.097, 0]}>
+            <cylinderGeometry args={[0.045, 0.045, 0.004, 24]} />
+            <Plain color={P.red} />
+          </mesh>
+        </group>
+        <group position={[-0.55, 0.84, 0]}>
+          <mesh position={[0, 0.2, 0]}>
+            <cylinderGeometry args={[0.012, 0.012, 0.4, 8]} />
+            <Plain color={P.ink} />
+          </mesh>
+          <mesh position={[0, 0.42, 0]}>
+            <sphereGeometry args={[0.1, 20, 16]} />
+            <meshStandardMaterial color="#fff6e6" emissive="#ffe4b8" emissiveIntensity={0.6} roughness={0.4} />
+          </mesh>
+        </group>
+      </group>
+      <group position={[1.05, 0, 0.35]} rotation={[0, -0.5, 0]}>
+        <Armchair color={P.blush} />
+      </group>
+      <Plant position={[-1.35, 0, 0.55]} s={1.2} pot={P.cream} />
+    </group>
+  )
+}
+
+function Beanbags() {
+  const colors = [P.mustard, P.sage, P.cream]
+  return (
+    <group>
+      <Rug w={3.2} d={3.2} kind="checker" a="#E9E3C9" b="#D8DCB5" cells={10} round />
+      {[0, 1, 2].map((i) => {
+        const a = 0.5 + (i / 3) * Math.PI * 2
+        return (
+          <mesh key={i} position={[Math.sin(a) * 1.05, 0.2, Math.cos(a) * 1.05]} scale={[1, 0.55, 1]} castShadow receiveShadow>
+            <sphereGeometry args={[0.42, 32, 24]} />
+            <Fabric color={colors[i]} repeat={3} />
+          </mesh>
+        )
+      })}
+      <mesh position={[0, 0.17, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.38, 0.38, 0.34, 40]} />
+        <Plain color={P.white} rough={0.5} />
+      </mesh>
+      <Box position={[0.05, 0.36, 0]} size={[0.28, 0.04, 0.22]} color={P.red} rot={0.6} />
+    </group>
+  )
+}
+
+function Nook() {
+  return (
+    <group>
+      <Rug w={2.8} d={2.2} kind="border" a="#EFE6DA" b="#E3B7AA" />
+      <group position={[0, 0, -0.35]}>
+        <Sofa w={2.0} color={P.blush} seats={2} />
+      </group>
+      <group position={[1.35, 0, 0.25]}>
+        <mesh position={[0, 0.25, 0]} castShadow>
+          <cylinderGeometry args={[0.02, 0.02, 0.5, 8]} />
+          <Plain color={P.sage} />
+        </mesh>
+        <mesh position={[0, 0.5, 0]} castShadow receiveShadow>
+          <cylinderGeometry args={[0.2, 0.2, 0.03, 28]} />
+          <Plain color={P.sky} rough={0.4} />
+        </mesh>
+        <mesh position={[0, 0.58, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, 0.12, 12]} />
+          <meshPhysicalMaterial color="#ffffff" transmission={0.9} roughness={0.05} thickness={0.1} />
+        </mesh>
+      </group>
+      <FloorLamp on={false} position={[-1.3, 0, -0.5]} shade={P.white} />
+    </group>
+  )
+}
+
+function Bench() {
+  return (
+    <group>
+      <RoundedBox args={[1.6, 0.08, 0.42]} radius={0.02} position={[0, 0.44, 0]} castShadow receiveShadow>
+        <Wood color={P.oak} />
+      </RoundedBox>
+      {[-0.65, 0.65].map((x) => (
+        <RoundedBox key={x} args={[0.08, 0.42, 0.38]} radius={0.015} position={[x, 0.21, 0]} castShadow>
+          <Wood color={P.oak} />
+        </RoundedBox>
+      ))}
+      <Plant position={[-1.15, 0, -0.1]} s={1.3} pot={P.maroon} />
+      <Plant position={[1.15, 0, -0.15]} s={0.9} pot={P.sage} />
+      <Plant position={[1.05, 0, 0.45]} s={0.6} pot={P.cream} />
+    </group>
+  )
+}
+
+const LEISURE_MODELS: Record<LeisureDef['id'], () => ReactNode> = {
+  lounge: Lounge,
+  cafe: Cafe,
+  meeting: Meeting,
+  records: Records,
+  beanbags: Beanbags,
+  nook: Nook,
+  bench: Bench,
+}
+
+function LeisureIsland({ def }: { def: LeisureDef }) {
+  const Model = LEISURE_MODELS[def.id]
+  return (
+    <group position={[def.x, 0, def.z]} rotation={[0, def.rot, 0]}>
+      <Model />
+    </group>
+  )
+}
+
 export function World() {
   const busyKey = useStore((s) => [...buildingBusy(s)].sort().join(','))
   const busy = new Set(busyKey.split(','))
   const waiting = useStore((s) => Object.values(s.tasks).filter((t) => t.status === 'waiting').length)
   return (
     <>
-      <Lounge />
+      {LEISURE.map((l) => (
+        <LeisureIsland key={l.id} def={l} />
+      ))}
       {BUILDINGS.map((b) => (
         <Station key={b.id} def={b} busy={busy.has(b.id) || (b.id === 'desk' && waiting > 0)} waiting={b.id === 'desk' ? waiting : 0} />
       ))}

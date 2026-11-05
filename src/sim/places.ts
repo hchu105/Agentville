@@ -1,4 +1,4 @@
-import { AGENTS, BUILDINGS, DESK_QUEUE, LOUNGE, type Spot } from './data'
+import { AGENTS, BUILDINGS, DESK_QUEUE, LEISURE, type LeisurePose, type Spot } from './data'
 import type { BuildingId } from './types'
 
 export interface P {
@@ -8,6 +8,7 @@ export interface P {
 export interface Place extends P {
   heading: number
   seat?: number
+  approach?: number
 }
 
 interface Frame {
@@ -25,6 +26,7 @@ export function toWorld(f: Frame, s: Spot): Place {
     z: f.z - s.x * sn + s.z * c,
     heading: f.rot + s.h,
     seat: s.seat,
+    approach: s.approach,
   }
 }
 
@@ -33,7 +35,20 @@ const agentIndex = (id: string) => Math.max(0, AGENTS.findIndex((a) => a.id === 
 
 export const workSpot = (id: BuildingId) => toWorld(station(id), station(id).work)
 export const queueSpot = (agentId: string) => toWorld(station('desk'), DESK_QUEUE[agentIndex(agentId) % DESK_QUEUE.length])
-export const homeSpot = (agentId: string) => toWorld(LOUNGE, LOUNGE.seats[agentIndex(agentId) % LOUNGE.seats.length])
+
+export interface LeisurePlace extends Place {
+  key: string
+  island: string
+  pose: LeisurePose
+}
+
+/** Every place a free agent can go and hang out, in world space. */
+export const LEISURE_SPOTS: LeisurePlace[] = LEISURE.flatMap((isl) =>
+  isl.spots.map((sp, i) => ({ ...toWorld(isl, sp), key: `${isl.id}:${i}`, island: isl.id, pose: sp.pose })),
+)
+
+/** Where each agent starts the day: a seat on the lounge sofa. */
+export const startSpot = (agentId: string) => LEISURE_SPOTS[agentIndex(agentId) % 4]
 
 /** A point just in front of a spot, so agents walk up to a chair instead of through it. */
 export const approachOf = (p: Place, dist = 0.75): P => ({
@@ -41,7 +56,7 @@ export const approachOf = (p: Place, dist = 0.75): P => ({
   z: p.z + Math.cos(p.heading) * dist,
 })
 
-const OBSTACLES = [...BUILDINGS.map((b) => ({ id: b.id as string, x: b.x, z: b.z, r: b.r })), { id: 'lounge', x: LOUNGE.x, z: LOUNGE.z, r: LOUNGE.r }]
+const OBSTACLES = [...BUILDINGS.map((b) => ({ id: b.id as string, x: b.x, z: b.z, r: b.r })), ...LEISURE.map((l) => ({ id: l.id as string, x: l.x, z: l.z, r: l.r }))]
 
 /** Nearest obstacle a straight segment cuts through, or null. */
 function blocker(a: P, b: P, skip: Set<string>) {

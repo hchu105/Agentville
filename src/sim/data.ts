@@ -104,6 +104,8 @@ export interface Spot {
   /** local heading: 0 faces the station's front (+z), PI faces back into it */
   h: number
   seat?: number
+  /** how far in front to line up before stepping in; negative = come from behind (seats around a table) */
+  approach?: number
 }
 
 export interface BuildingDef {
@@ -129,14 +131,85 @@ export const BUILDINGS: BuildingDef[] = [
   { id: 'market', name: 'Shop Table', tool: 'Etsy listings', x: 2.24, z: 5.12, rot: Math.PI / 2, r: 1.9, work: { x: 0.2, z: 0.6, h: Math.PI, pose: 'type', seat: 0.46 } },
 ]
 
-// Where free agents hang out, next to the job board.
-export const LOUNGE = {
-  x: 0,
-  z: 0,
-  rot: 0,
-  r: 2.2,
-  seats: [-1.12, -0.38, 0.38, 1.12].map((x) => ({ x, z: -0.5, h: 0, seat: 0.44 }) as Spot),
+// Free agents roam between these. Each island has spots to sit, lounge or stand at.
+export type LeisurePose = 'lounge' | 'sit' | 'browse' | 'sip'
+export interface LeisureSpot extends Spot {
+  pose: LeisurePose
 }
+export interface LeisureDef {
+  id: 'lounge' | 'cafe' | 'meeting' | 'records' | 'beanbags' | 'nook' | 'bench'
+  name: string
+  x: number
+  z: number
+  rot: number
+  r: number
+  spots: LeisureSpot[]
+}
+
+const ring = (n: number, radius: number, seat: number, pose: LeisurePose, offset = 0): LeisureSpot[] =>
+  Array.from({ length: n }, (_, i) => {
+    const a = offset + (i / n) * Math.PI * 2
+    // face the centre
+    return { x: Math.sin(a) * radius, z: Math.cos(a) * radius, h: a + Math.PI, seat, pose, approach: -0.6 }
+  })
+
+export const LEISURE: LeisureDef[] = [
+  {
+    id: 'lounge',
+    name: 'Lounge',
+    x: 0,
+    z: 0,
+    rot: 0,
+    r: 2.2,
+    spots: [-1.12, -0.38, 0.38, 1.12].map((x) => ({ x, z: -0.5, h: 0, seat: 0.44, pose: 'lounge' as const })),
+  },
+  {
+    id: 'cafe',
+    name: 'Coffee bar',
+    x: -0.4,
+    z: -8.6,
+    rot: 0,
+    r: 1.6,
+    spots: [
+      { x: -0.55, z: 0.55, h: Math.PI, pose: 'sip' },
+      { x: 0.5, z: 0.55, h: Math.PI, pose: 'browse' },
+    ],
+  },
+  { id: 'meeting', name: 'Meeting table', x: 8.8, z: -5.2, rot: 0, r: 1.7, spots: ring(4, 0.95, 0.46, 'sit') },
+  {
+    id: 'records',
+    name: 'Record corner',
+    x: -9.2,
+    z: -4.4,
+    rot: Math.PI / 2,
+    r: 1.7,
+    spots: [
+      { x: -0.3, z: 0.55, h: Math.PI, pose: 'browse' },
+      { x: 1.05, z: 0.35, h: -0.5, seat: 0.42, pose: 'lounge' },
+    ],
+  },
+  { id: 'beanbags', name: 'Beanbags', x: 9.2, z: 4.4, rot: 0, r: 1.6, spots: ring(3, 1.0, 0.3, 'lounge', 0.5) },
+  {
+    id: 'nook',
+    name: 'Pink sofa',
+    x: -7.8,
+    z: 7.6,
+    rot: 0,
+    r: 1.6,
+    spots: [-0.4, 0.4].map((x) => ({ x, z: -0.3, h: 0, seat: 0.44, pose: 'lounge' as const })),
+  },
+  {
+    id: 'bench',
+    name: 'Bench',
+    x: 6.4,
+    z: 9.6,
+    rot: Math.PI / 2,
+    r: 1.4,
+    spots: [-0.4, 0.4].map((x) => ({ x, z: 0, h: 0, seat: 0.45, pose: 'sit' as const })),
+  },
+]
+
+export const LOUNGE = LEISURE[0]
 
 // Agents wait for approval in a row in front of Rae's desk.
 export const DESK_QUEUE: Spot[] = [-0.95, -0.32, 0.32, 0.95].map((x) => ({ x, z: 1.05, h: Math.PI }))

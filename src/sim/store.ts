@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { AGENTS, JOBS, planCustomJob } from './data'
-import { approachOf, homeSpot, queueSpot, route, workSpot, type Place } from './places'
+import { approachOf, LEISURE_SPOTS, queueSpot, route, startSpot, workSpot, type LeisurePlace, type Place } from './places'
 import type { AgentEvent, AgentState, Autonomy, BuildingId, EventType, JobTemplate, Task } from './types'
 
 export type View = 'village' | 'ledger'
@@ -180,29 +180,71 @@ export interface Pose {
   path: { x: number; z: number }[]
   timer: number
   arrive: (() => void) | null
+  /** 1 = walking with purpose, lower = strolling */
+  speed: number
+  /** the hangout spot a free agent is sitting/standing at, if any */
+  leisure: LeisurePlace | null
+  /** seconds left before a free agent wanders somewhere else */
+  dwell: number
 }
 
 const WALK_SPEED = 1.9
+const STROLL = 0.6
+
+// deterministic-ish randomness so the room feels alive but not chaotic
+let seedN = 7
+const rand = () => {
+  seedN = (seedN * 16807) % 2147483647
+  return seedN / 2147483647
+}
 
 export const runtime = {
   poses: Object.fromEntries(
     AGENTS.map((a) => {
-      const h = homeSpot(a.id)
-      return [a.id, { x: h.x, z: h.z, heading: h.heading, path: [], timer: 0, arrive: null } as Pose]
+      const h = startSpot(a.id)
+      return [a.id, { x: h.x, z: h.z, heading: h.heading, path: [], timer: 0, arrive: null, speed: 1, leisure: h, dwell: 6 + rand() * 10 } as Pose]
     }),
   ) as Record<string, Pose>,
+  claims: Object.fromEntries(AGENTS.map((a) => [startSpot(a.id).key, a.id])) as Record<string, string>,
   celebrate: {} as Record<string, number>,
 
+  release(agentId: string) {
+    for (const k of Object.keys(this.claims)) if (this.claims[k] === agentId) delete this.claims[k]
+    this.poses[agentId].leisure = null
+  },
+
   /** Walk to a place: route around furniture to just in front of it, step in, then face the right way. */
-  walk(agentId: string, to: Place, arrive: () => void) {
+  walk(agentId: string, to: Place, arrive: () => void, speed = 1) {
     const p = this.poses[agentId]
-    const front = approachOf(to, to.seat ? 0.75 : 0.35)
+    const front = approachOf(to, to.approach ?? (to.seat ? 0.75 : 0.35))
     p.path = [...route(p, front), { x: to.x, z: to.z }]
+    p.speed = speed
     p.arrive = () => {
       p.heading = to.heading
       arrive()
     }
-    useStore.getState()._patchAgent(agentId, { activity: 'walking' })
+  },
+
+  /** Free time: wander to an open seat or spot somewhere else in the room. Status stays "Free". */
+  roam(agentId: string) {
+    const p = this.poses[agentId]
+    const here = p.leisure?.island
+    this.release(agentId)
+    const open = LEISURE_SPOTS.filter((sp) => !this.claims[sp.key])
+    const elsewhere = open.filter((sp) => sp.island !== here)
+    const pool = elsewhere.length ? elsewhere : open
+    if (!pool.length) return
+    const spot = pool[Math.floor(rand() * pool.length)]
+    this.claims[spot.key] = agentId
+    this.walk(
+      agentId,
+      spot,
+      () => {
+        p.leisure = spot
+        p.dwell = 12 + rand() * 16
+      },
+      STROLL,
+    )
   },
 
   /** Start (or continue) the agent's current task at its stepIndex. */
@@ -213,15 +255,19 @@ export const runtime = {
     if (!task) return
     const step = task.steps[task.stepIndex]
     if (!step) return
+    this.release(agentId)
     const next = () => {
       const cur = useStore.getState().tasks[task.id]
       useStore.getState()._patchTask(task.id, { stepIndex: cur.stepIndex + 1 })
       this.begin(agentId)
     }
     const st = useStore.getState()
+    const go = (to: Place, arrive: () => void) => {
+      st._patchAgent(agentId, { activity: 'walking', bubble: null })
+      this.walk(agentId, to, arrive)
+    }
     if (step.kind === 'tool') {
-      st._patchAgent(agentId, { bubble: null })
-      this.walk(agentId, workSpot(step.building), () => {
+      go(workSpot(step.building), () => {
         const g = useStore.getState()
         g._patchAgent(agentId, { activity: 'working', bubble: step.label })
         g._log(agentId, 'tool_start', step.label, { taskId: task.id, building: step.building })
@@ -246,14 +292,14 @@ export const runtime = {
         next()
         return
       }
-      this.walk(agentId, queueSpot(agentId), () => {
+      go(queueSpot(agentId), () => {
         const g = useStore.getState()
         g._patchAgent(agentId, { activity: 'waiting', bubble: step.label })
         g._patchTask(task.id, { status: 'waiting' })
         g._log(agentId, 'needs_approval', `Needs your OK: ${step.label}`, { taskId: task.id })
       })
     } else if (step.kind === 'deliver') {
-      this.walk(agentId, queueSpot(agentId), () => {
+      go(queueSpot(agentId), () => {
         const g = useStore.getState()
         g._patchTask(task.id, { status: 'done', finishedAt: g.clock })
         g._log(agentId, 'done', `Delivered “${task.title}”`, { taskId: task.id })
@@ -261,15 +307,12 @@ export const runtime = {
         g._patchAgent(agentId, { activity: 'celebrating', bubble: null, taskId: null, done: g.agents[agentId].done + 1 })
         this.celebrate[agentId] = 1.4
         this.poses[agentId].timer = 1.4
-        this.poses[agentId].arrive = () => this.goHome(agentId)
+        this.poses[agentId].arrive = () => {
+          useStore.getState()._patchAgent(agentId, { activity: 'idle' })
+          this.roam(agentId)
+        }
       })
     }
-  },
-
-  goHome(agentId: string) {
-    this.walk(agentId, homeSpot(agentId), () => {
-      useStore.getState()._patchAgent(agentId, { activity: 'idle', bubble: null })
-    })
   },
 
   tick(rawDt: number) {
@@ -281,8 +324,11 @@ export const runtime = {
       const p = this.poses[id]
       const ag = s.agents[id]
 
-      // pick up queued work
-      if (!ag.taskId && (ag.activity === 'idle' || (ag.activity === 'walking' && p.path.length && !p.timer))) {
+      // Selected agents pause and look at you; nothing advances for them.
+      if (s.selectedAgentId === id) continue
+
+      if (!ag.taskId && ag.activity === 'idle') {
+        // pick up queued work
         const queued = Object.values(s.tasks)
           .filter((t) => t.agentId === id && t.status === 'queued')
           .sort((a, b) => a.createdAt - b.createdAt)[0]
@@ -292,6 +338,11 @@ export const runtime = {
           this.begin(id)
           continue
         }
+        // otherwise, free time
+        if (!p.path.length) {
+          if (!p.leisure) this.roam(id)
+          else if ((p.dwell -= dt) <= 0) this.roam(id)
+        }
       }
 
       if (p.path.length) {
@@ -299,7 +350,7 @@ export const runtime = {
         const dx = tgt.x - p.x
         const dz = tgt.z - p.z
         const d = Math.hypot(dx, dz)
-        const stepLen = WALK_SPEED * dt
+        const stepLen = WALK_SPEED * p.speed * dt
         if (d <= stepLen) {
           p.x = tgt.x
           p.z = tgt.z

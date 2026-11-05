@@ -5,7 +5,17 @@ import * as THREE from 'three'
 import { BUILDINGS } from '../sim/data'
 import { runtime, useStore } from '../sim/store'
 import type { AgentState, Look, Pose } from '../sim/types'
+import { useShallow } from 'zustand/react/shallow'
 import { Fabric, Hair, Plain, Skin } from './materials'
+
+const CHIP_STATE: Record<AgentState['activity'], string> = {
+  idle: 'Free',
+  walking: 'On the way',
+  working: 'Working',
+  waiting: 'Needs you',
+  blocked: 'Stuck',
+  celebrating: 'Done',
+}
 
 // Proportions in metres-ish units. Legs 0.42 + 0.42 + foot ≈ 0.92 hip height.
 const HIP = 0.92
@@ -43,6 +53,18 @@ function target(pose: Pose, seat: number, t: number): Joints {
     }
     case 'lounge':
       return { hip: sitH, lean: -0.4, head: 0.22, legL: [-1.35, 1.2], legR: [-1.5, 1.45], armL: [-0.1, 0.4, -0.5], armR: [-0.35, 0.1, -0.9] }
+    case 'sit':
+      return { hip: sitH, lean: 0.02, head: 0.12 + Math.sin(t * 0.6) * 0.06, legL: [-1.5, 1.45], legR: [-1.5, 1.55], armL: [-0.55, -0.12, -0.8], armR: [-0.6, -0.1, -0.95] }
+    case 'browse': {
+      // flipping through records or reading a menu: head down, hands forward
+      const f = Math.sin(t * 1.1) * 0.12
+      return { hip: HIP, lean: 0.12, head: 0.42, legL: [0.06, 0.04], legR: [-0.04, 0.12], armL: [-0.95 + f, -0.1, -0.7], armR: [-0.85, -0.12, -0.9 - f] }
+    }
+    case 'sip': {
+      // coffee in hand, lifting it now and then
+      const lift = Math.max(0, Math.sin(t * 0.45)) ** 6
+      return { hip: HIP, lean: -0.02, head: -0.05 - lift * 0.15, legL: [0.05, 0.05], legR: [-0.08, 0.15], armL: [0.05, 0.1, -0.2], armR: [-0.55 - lift * 0.5, -0.25, -1.5 - lift * 0.6] }
+    }
     case 'type': {
       const j = Math.sin(t * 16) * 0.06
       return { hip: sitH, lean: 0.1, head: 0.3, legL: [-1.5, 1.5], legR: [-1.5, 1.5], armL: [-0.85 + j, -0.12, -0.75], armR: [-0.85 - j, -0.12, -0.75] }
@@ -193,44 +215,87 @@ export function Person({ agent }: { agent: AgentState }) {
   const [hover, setHover] = useState(false)
   const selected = useStore((s) => s.selectedAgentId === agent.id)
   const select = useStore((s) => s.select)
-  const building = useStore((s) => {
-    const a = s.agents[agent.id]
-    const t = a.taskId ? s.tasks[a.taskId] : null
-    const st = t?.steps[t.stepIndex]
-    return st && (st.kind === 'tool' || st.kind === 'hiccup') ? st.building : null
-  })
   const a = agent.activity
-  const station = BUILDINGS.find((b) => b.id === building)
-  const pose: Pose =
-    a === 'walking'
-      ? 'walk'
-      : a === 'idle'
-        ? 'lounge'
-        : a === 'working'
-          ? (station?.work.pose ?? 'stand')
-          : a === 'waiting'
-            ? 'present'
-            : a === 'blocked'
-              ? 'scratch'
-              : a === 'celebrating'
-                ? 'cheer'
-                : 'stand'
-  const seat = pose === 'lounge' ? 0.44 : (station?.work.seat ?? 0.45)
+  const task = useStore(
+    useShallow((s) => {
+      const ag = s.agents[agent.id]
+      const t = ag.taskId ? s.tasks[ag.taskId] : null
+      if (!t) return null
+      const st = t.steps[t.stepIndex]
+      return {
+        title: t.title,
+        step: Math.max(0, t.stepIndex),
+        total: t.steps.length,
+        building: st && (st.kind === 'tool' || st.kind === 'hiccup') ? st.building : null,
+      }
+    }),
+  )
+  const station = BUILDINGS.find((b) => b.id === task?.building)
   const sleeve = look.sleeves === 'long' ? look.top : look.skin
+  // Pose is decided every frame from the runtime (moving, sitting where), but
+  // mirrored into React state so held props and the chip height can follow it.
+  const [pose, setPose] = useState<Pose>('lounge')
+  const poseRef = useRef<Pose>('lounge')
+  const seatRef = useRef(0.44)
+  const wave = useRef(0)
+  const wasSelected = useRef(false)
+  const camDir = useMemo(() => new THREE.Vector3(), [])
 
   useFrame((state, dt) => {
     const p = runtime.poses[agent.id]
     const g = root.current
     if (!g || !hips.current || !torso.current) return
     const t = state.clock.elapsedTime + agent.id.length * 1.7
+    const act = useStore.getState().agents[agent.id].activity
+
+    // what am I doing right now?
+    let ps: Pose
+    let seat = 0.45
+    if (p.path.length && !selected) ps = 'walk'
+    else if (act === 'idle' && p.leisure) {
+      ps = p.leisure.pose
+      seat = p.leisure.seat ?? 0.45
+    } else if (act === 'working') {
+      ps = station?.work.pose ?? 'stand'
+      seat = station?.work.seat ?? 0.45
+    } else if (act === 'waiting') ps = 'present'
+    else if (act === 'blocked') ps = 'scratch'
+    else if (act === 'celebrating') ps = 'cheer'
+    else ps = 'stand'
+    seatRef.current = seat
+    if (ps !== poseRef.current) {
+      poseRef.current = ps
+      setPose(ps)
+    }
+    const seated = ps === 'lounge' || ps === 'sit' || ps === 'type' || ps === 'read'
+
+    // Selected: stop, turn to the viewer, wave once, keep eye contact.
+    if (selected && !wasSelected.current) wave.current = 1.8
+    wasSelected.current = selected
+    if (wave.current > 0) wave.current -= dt
+    state.camera.getWorldDirection(camDir)
+    const toViewer = Math.atan2(-camDir.x, -camDir.z)
+
     g.position.x = p.x
     g.position.z = p.z
-    let dh = p.heading - g.rotation.y
+    const want = selected && !seated ? toViewer : p.heading
+    let dh = want - g.rotation.y
     dh = Math.atan2(Math.sin(dh), Math.cos(dh))
-    g.rotation.y += dh * Math.min(1, dt * 9)
+    g.rotation.y += dh * Math.min(1, dt * (selected ? 6 : 9))
 
-    const tg = target(pose, seat, t)
-    const k = pose === 'walk' ? 1 : 1 - Math.exp(-dt * 9)
+    const tg = target(selected && ps === 'walk' ? 'stand' : ps, seat, t)
+    if (selected) {
+      tg.head = -0.28 // look up at the viewer
+      if (!seated) {
+        tg.lean = 0
+        tg.legL = [0, 0]
+        tg.legR = [0, 0]
+        tg.armL = [0.05, 0.12, -0.2]
+        tg.armR = [0.05, 0.12, -0.2]
+      }
+      if (wave.current > 0) tg.armR = [-0.15, 2.55 + Math.sin(t * 14) * 0.28, -0.35]
+    }
+    const k = ps === 'walk' && !selected ? 1 : 1 - Math.exp(-dt * 8)
     const c = cur.current
     const mix = (x: number, y: number) => x + (y - x) * k
     c.hip = mix(c.hip, tg.hip)
@@ -240,10 +305,26 @@ export function Person({ agent }: { agent: AgentState }) {
     for (const key of ['armL', 'armR'] as const) for (let i = 0; i < 3; i++) c[key][i] = mix(c[key][i], tg[key][i])
 
     let hop = 0
-    if (pose === 'cheer') hop = Math.abs(Math.sin(Math.max(0, runtime.celebrate[agent.id] ?? 0) * 7)) * 0.18
+    if (ps === 'cheer') hop = Math.abs(Math.sin(Math.max(0, runtime.celebrate[agent.id] ?? 0) * 7)) * 0.18
     hips.current.position.y = c.hip + hop
+    // idle life: a little weight shift and sway when standing still
+    const still = !seated && ps !== 'walk'
+    hips.current.position.x = still ? Math.sin(t * 0.55) * 0.018 : 0
+    torso.current.rotation.z = still ? Math.sin(t * 0.55) * -0.025 : 0
     torso.current.rotation.x = c.lean
-    if (head.current) head.current.rotation.x = c.head - c.lean * 0.5
+    if (head.current) {
+      head.current.rotation.order = 'YXZ'
+      head.current.rotation.x = c.head - c.lean * 0.5
+      // glance around now and then; when selected, find the viewer
+      const glance = Math.sin(t * 0.31) * 0.35 + Math.sin(t * 0.83) * 0.12
+      let yaw = ps === 'walk' ? 0 : glance * (seated || still ? 1 : 0.3)
+      if (selected) {
+        let rel = toViewer - g.rotation.y
+        rel = Math.atan2(Math.sin(rel), Math.cos(rel))
+        yaw = Math.max(-1.2, Math.min(1.2, rel))
+      }
+      head.current.rotation.y += (yaw - head.current.rotation.y) * Math.min(1, dt * 5)
+    }
     legL.current!.rotation.x = c.legL[0]
     kneeL.current!.rotation.x = c.legL[1]
     legR.current!.rotation.x = c.legR[0]
@@ -252,7 +333,6 @@ export function Person({ agent }: { agent: AgentState }) {
     armR.current!.rotation.set(c.armR[0], 0, c.armR[1])
     elbowL.current!.rotation.x = c.armL[2]
     elbowR.current!.rotation.x = c.armR[2]
-    // breathing
     torso.current.scale.y = 1 + Math.sin(t * 1.8) * 0.008
   })
 
@@ -422,15 +502,47 @@ export function Person({ agent }: { agent: AgentState }) {
           </group>
 
           {arm(-1, armL, elbowL, heldL)}
-          {arm(1, armR, elbowR)}
+          {arm(
+            1,
+            armR,
+            elbowR,
+            pose === 'sip' ? (
+              <mesh position={[-0.03, -0.27, 0.05]} castShadow>
+                <cylinderGeometry args={[0.04, 0.035, 0.09, 16]} />
+                <meshPhysicalMaterial color="#EDE3D1" roughness={0.25} clearcoat={1} />
+              </mesh>
+            ) : null,
+          )}
         </group>
       </group>
 
-      <Html position={[0, 2.05, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-        <div className={`bubble bubble--${a} ${selected ? 'is-selected' : ''} ${a === 'idle' && !selected && !hover ? 'is-quiet' : ''}`}>
-          <span className="bubble__name">{agent.name}</span>
-          {agent.bubble && a !== 'walking' && <span className="bubble__text">{agent.bubble}</span>}
-        </div>
+      <Html position={[0, pose === 'lounge' || pose === 'sit' || pose === 'type' || pose === 'read' ? 1.62 : 2.0, 0]} center zIndexRange={[20, 0]}>
+        <button
+          type="button"
+          className={`chip3d chip3d--${a} ${selected ? 'is-selected' : ''} ${hover ? 'is-hover' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            select(selected ? null : agent.id)
+          }}
+          onPointerEnter={() => setHover(true)}
+          onPointerLeave={() => setHover(false)}
+          aria-label={`${agent.name}: ${CHIP_STATE[a]}${task ? `, ${task.title}` : ''}`}
+        >
+          <span className="chip3d__row">
+            <span className="chip3d__dot" />
+            <span className="chip3d__name">{agent.name}</span>
+            <span className="chip3d__state">{selected ? 'Paused' : CHIP_STATE[a]}</span>
+          </span>
+          {task && (
+            <>
+              <span className="chip3d__task">{task.title}</span>
+              <span className="chip3d__bar">
+                <i style={{ width: `${Math.round((task.step / task.total) * 100)}%` }} />
+              </span>
+            </>
+          )}
+          {selected && agent.bubble && <span className="chip3d__more">{agent.bubble}</span>}
+        </button>
       </Html>
     </group>
   )

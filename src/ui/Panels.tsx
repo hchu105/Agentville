@@ -206,6 +206,10 @@ function Inspector({ id }: { id: string }) {
           ×
         </button>
       </header>
+      <p className="paused">
+        <span className="paused__dot" />
+        Paused and looking at you. Close this card to let {a.name} carry on.
+      </p>
       <p className="inspector__blurb">{a.blurb}</p>
 
       <div className="stats">
@@ -236,7 +240,7 @@ function Inspector({ id }: { id: string }) {
       ) : (
         <div className="block">
           <h3>Free</h3>
-          <p className="muted">Waiting in the square. Send {a.name} a job from the board.</p>
+          <p className="muted">Wandering the room between jobs. Send {a.name} one from the board.</p>
         </div>
       )}
 

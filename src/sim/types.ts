@@ -29,7 +29,7 @@ export interface AgentDef {
 }
 
 export type HairStyle = 'curly' | 'short' | 'bun' | 'long' | 'beanie'
-export type Pose = 'stand' | 'walk' | 'lounge' | 'type' | 'read' | 'operate' | 'counter' | 'present' | 'scratch' | 'cheer'
+export type Pose = 'stand' | 'walk' | 'lounge' | 'sit' | 'browse' | 'sip' | 'type' | 'read' | 'operate' | 'counter' | 'present' | 'scratch' | 'cheer'
 
 /** How a resident is dressed. Every field is a material choice. */
 export interface Look {

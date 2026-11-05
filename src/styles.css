@@ -585,6 +585,23 @@ p {
   color: var(--ink-2);
   font-size: 12.5px;
 }
+.paused {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--line);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.paused__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 2px;
+  box-shadow: inset 3px 0 0 var(--ink-2), inset -3px 0 0 var(--ink-2);
+}
 .inspector__blurb {
   color: var(--ink-2);
   font-size: 13px;
@@ -795,70 +812,150 @@ p {
 }
 
 /* ───────── 3D-attached labels ───────── */
-.bubble {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* The info chip floating over each resident: minimal by default, clickable. */
+.chip3d {
+  display: grid;
   gap: 3px;
+  width: max-content;
+  max-width: 168px;
+  position: relative;
+  padding: 5px 8px 6px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3);
+  backdrop-filter: blur(12px) saturate(1.3);
+  box-shadow: inset 0 1px 0 var(--edge), 0 4px 14px rgba(40, 34, 26, 0.12);
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
   transform: translateY(-4px);
-  white-space: nowrap;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.2s;
   user-select: none;
 }
-.bubble {
-  transition: opacity 0.2s;
-}
-.bubble.is-quiet {
-  opacity: 0;
-}
-.bubble__name {
-  font: 700 11px/1 var(--display);
-  padding: 4px 8px;
-  border-radius: 99px;
-  background: var(--surface);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  box-shadow: inset 0 1px 0 var(--edge), 0 2px 6px rgba(0, 0, 0, 0.12);
-  border: 1px solid var(--line);
-}
-.bubble__text {
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font: 500 10.5px/1.2 var(--mono);
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: var(--surface);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border: 1px solid var(--line);
-  color: var(--ink-2);
-  order: -1;
-}
-.bubble--working .bubble__name::after {
+.chip3d::after {
+  /* little tail pointing down at the head */
   content: '';
-  display: inline-block;
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 7px;
+  height: 7px;
+  margin-left: -3.5px;
+  transform: rotate(45deg);
+  background: inherit;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.chip3d:hover,
+.chip3d.is-hover {
+  transform: translateY(-7px);
+  box-shadow: inset 0 1px 0 var(--edge), 0 8px 20px rgba(40, 34, 26, 0.18);
+}
+.chip3d__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.chip3d__dot {
   width: 6px;
   height: 6px;
-  margin-left: 5px;
+  flex: none;
   border-radius: 50%;
-  background: var(--signal);
-  animation: pulse 0.9s infinite;
-  vertical-align: 1px;
+  background: var(--ink-3);
 }
-.bubble--waiting .bubble__name {
+.chip3d__name {
+  font: 700 11px/1.1 var(--display);
+}
+.chip3d__state {
+  font: 500 9.5px/1.1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.chip3d__task {
+  max-width: 152px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10.5px;
+  line-height: 1.25;
+  color: var(--ink-2);
+}
+.chip3d__bar {
+  display: block;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+.chip3d__bar i {
+  display: block;
+  height: 100%;
+  background: var(--ink-2);
+  transition: width 0.6s ease;
+}
+.chip3d__more {
+  max-width: 152px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+  font: 400 10px/1.3 var(--mono);
+  color: var(--ink-2);
+  white-space: normal;
+}
+/* free: the quietest version */
+.chip3d--idle {
+  opacity: 0.72;
+  padding: 4px 7px;
+}
+.chip3d--idle:hover,
+.chip3d--idle.is-selected {
+  opacity: 1;
+}
+.chip3d--working .chip3d__dot,
+.chip3d--walking .chip3d__dot {
   background: var(--signal);
-  color: var(--signal-ink);
+}
+.chip3d--working .chip3d__dot {
+  animation: pulse 1s infinite;
+}
+.chip3d--working .chip3d__bar i {
+  background: var(--signal);
+}
+.chip3d--waiting {
+  background: var(--signal);
   border-color: var(--signal);
+  color: var(--signal-ink);
 }
-.bubble--waiting .bubble__text {
-  color: var(--signal);
-  font-weight: 700;
+.chip3d--waiting .chip3d__dot {
+  background: #fff;
+  animation: pulse 0.9s infinite;
 }
-.bubble--blocked .bubble__text {
+.chip3d--waiting .chip3d__state,
+.chip3d--waiting .chip3d__task,
+.chip3d--waiting .chip3d__more {
+  color: rgba(255, 255, 255, 0.85);
+}
+.chip3d--waiting .chip3d__bar {
+  background: rgba(255, 255, 255, 0.3);
+}
+.chip3d--waiting .chip3d__bar i {
+  background: #fff;
+}
+.chip3d--blocked .chip3d__dot {
+  background: var(--warn);
+}
+.chip3d--blocked .chip3d__state {
   color: var(--warn);
 }
-.bubble.is-selected .bubble__name {
+.chip3d--celebrating .chip3d__dot {
+  background: var(--ok);
+}
+.chip3d.is-selected {
   outline: 2px solid var(--signal);
+  outline-offset: 1px;
+  transform: translateY(-7px);
 }
 .tag {
   display: flex;

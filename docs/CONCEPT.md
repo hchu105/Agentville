@@ -19,7 +19,8 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 
 ## Design rules
 
-1. **Every game element maps to a real agent state or action.** No idle animations that pretend work is happening.
+1. **Every game element maps to a real agent state or action.** No animation pretends work is happening. Free agents do roam the room (coffee, records, beanbags), but they always read as *free*: casual postures, a quiet grey "Free" chip, never at a tool station.
+8. **Looking is an interaction.** Selecting a resident pauses it: it stops, turns to face you, waves, and holds eye contact until you close its card. Attention costs the agent's time, so it should feel like you tapped someone on the shoulder.
 2. **Stations are tools.** An agent walking to the Post Counter *is* an email tool call. This makes invisible tool use visible.
 3. **Friction proportional to consequence.** Low-risk actions just happen. Anything that goes public requires a physical ritual (hold-to-stamp).
 4. **Progression = trust.** Agents earn autonomy from a real approval track record. Two clean approvals in a row unlock the next level. You still choose whether to turn the dial up.
@@ -35,7 +36,9 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 | Station (furniture island) | A connected tool or integration |
 | Walking to a station | A live tool call |
 | Station lamp on, warm pool on the floor | That tool is in use right now |
-| Lounging on the sofa | Free for work |
+| Roaming: sofa, coffee bar, meeting table, records, beanbags, bench | Free for work |
+| Info chip over the head (status, task, progress bar) | Live state; click for details |
+| Turning to face you and waving | Paused because you're looking |
 | Job board by the sofa | The task queue |
 | Holding up an orange folder at Rae's Desk | Waiting for your approval |
 | Hand on head + yellow bubble | Error or retry |
@@ -47,7 +50,7 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 
 **v2, from reference images.** Minimal environments; the characters carry the scene. Think furniture-catalog isometric renders and a team photo shot top-down on seamless paper: people with real proportions, real clothes and one signature prop each, scattered across an open warm-white floor.
 
-- **No world-building.** No terrain, no plinth. The page color *is* the floor. Each place is a small furniture island (rug, a few pieces of furniture, a lamp, a plant) floating in white space.
+- **No world-building, lots of room.** No terrain, no plinth. The page color *is* the floor, and it's an open canvas you can pan and zoom. Each place is a small furniture island (rug, a few pieces of furniture, a lamp, a plant) floating in white space: six work stations plus seven places to hang out.
 - **People first.** Residents are proportioned figures (about 1.75 m) with fabric clothing, skin, hair and a signature prop: Pip's notebook and glasses, Juno's beanie and camera, Scout's bun and backpack, Bea's tote. No faces; posture and silhouette carry identity.
 - **Posture is state.** Lounging on the sofa = free. Typing, reading in the armchair, behind the camera, sorting at the counter = working, at that tool. Holding up an orange folder at Rae's desk = needs you. Hand on head = stuck. Arms up = delivered.
 - **Lights on = tool in use.** Each station's lamp switches on and throws a warm pool on the floor while an agent works there.

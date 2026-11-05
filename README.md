@@ -23,6 +23,8 @@ npm run build:single # one self-contained HTML file in dist-single/agentville.ht
 - When a resident stands at **Rae's Desk** holding up an orange folder, press **Review** on the deck, read the preview, and **hold Approve** (or send it back).
 - **Two clean approvals** in a row earn a resident more trust. Open its card and turn the **autonomy dial**.
 - Finished work **prints as a receipt** from the deck. Hover the printer and click a receipt to read it.
+- **Drag to pan, scroll to zoom.** Free residents roam: coffee bar, meeting table, record corner, beanbags, pink sofa, bench.
+- **Click a resident or its chip** to open its card. It pauses, turns to you and waves until you close the card.
 - Flip **Village / Ledger** for the calm list view. Use **1× / 2× / 4×** to speed up time.
 - Debug from the console: `agentville.useStore.getState()`.
 
