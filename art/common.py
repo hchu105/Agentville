@@ -29,6 +29,7 @@ def hexcol(h):
 
 def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    _mats.clear()
     s = bpy.context.scene
     s.render.engine = 'CYCLES'
     s.cycles.device = 'CPU'

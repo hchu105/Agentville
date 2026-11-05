@@ -7,8 +7,8 @@ import { buildingBusy, useStore } from '../sim/store'
 import { assetUrl, manifest, prepare } from './world'
 import { orderOf } from './view'
 
-type Layer = (typeof manifest.layers)['desk'] & { busy?: string }
-const layers = manifest.layers as Record<string, Layer>
+type Layer = { u: number; v: number; w: number; h: number; depth: number; idle: string; busy?: string }
+const layers: Record<string, Layer> = manifest.layers
 
 /** A station is a cutout from the world image, so residents can pass behind it. */
 export function Cutout({ name, busy = false }: { name: string; busy?: boolean }) {

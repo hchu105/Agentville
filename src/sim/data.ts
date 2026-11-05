@@ -62,7 +62,7 @@ export interface BuildingDef {
 // Buildings are tools, shown as furnished stations. An agent walking to the Post Office is an
 // email tool call. x and z must match STATIONS in art/world.py.
 export const BUILDINGS: BuildingDef[] = [
-  { id: 'desk', name: "Rae's Desk", tool: 'Approvals & delivery', x: 0, z: -5.2, stop: { x: 0, z: -4.3 }, gate: { x: 0, z: -3.2 }, labelY: 1.9 },
+  { id: 'desk', name: "Rae's Desk", tool: 'Approvals & delivery', x: 0, z: -5.2, stop: { x: 0, z: -3.95 }, gate: { x: 0, z: -3.2 }, labelY: 1.75 },
   { id: 'lookout', name: 'Lookout', tool: 'Web & trend research', x: -5.4, z: -4.2, stop: { x: -3.7, z: -4.2 }, gate: { x: -3.2, z: -3 }, labelY: 2.3 },
   { id: 'library', name: 'Library', tool: 'Brand guide & docs', x: 5.3, z: -4.0, stop: { x: 5, z: -3 }, gate: { x: 3.6, z: -1.9 }, labelY: 2.4 },
   { id: 'studio', name: 'Photo Studio', tool: 'Image editing', x: -5.8, z: 1.6, stop: { x: -4.6, z: 1.9 }, gate: { x: -3.2, z: 1.9 }, labelY: 2.7 },

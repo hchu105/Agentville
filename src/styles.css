@@ -1,4 +1,4 @@
-/* Agentville. Layout concept: a full-bleed diorama on a desk, frosted-acrylic
+/* Agentville. Layout concept: a full-bleed rendered world on a desk, frosted-acrylic
    panels floating over it, and an anodized hardware deck along the bottom edge. */
 :root {
   /* color */
@@ -758,8 +758,6 @@ p {
   padding: 4px 8px;
   border-radius: 99px;
   background: var(--surface);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
   box-shadow: inset 0 1px 0 var(--edge), 0 2px 6px rgba(0, 0, 0, 0.12);
   border: 1px solid var(--line);
 }
@@ -771,8 +769,6 @@ p {
   padding: 4px 8px;
   border-radius: 8px;
   background: var(--surface);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
   border: 1px solid var(--line);
   color: var(--ink-2);
   order: -1;

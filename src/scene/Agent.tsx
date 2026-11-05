@@ -96,7 +96,7 @@ export function Agent({ agent }: { agent: AgentState }) {
           <cylinderGeometry args={[0.42, 0.42, 1.6, 12]} />
           <meshBasicMaterial visible={false} />
         </mesh>
-        <Html position={[0, 1.8, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
+        <Html position={[0, a === 'waiting' ? 2.85 : 1.8, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
           <div className={`bubble bubble--${a} ${selected ? 'is-selected' : ''}`}>
             <span className="bubble__name">{agent.name}</span>
             {agent.bubble && a !== 'walking' && <span className="bubble__text">{agent.bubble}</span>}

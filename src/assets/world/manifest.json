@@ -1,0 +1,126 @@
+{
+ "floor": "#f1ede7",
+ "plate": {
+  "file": "plate.webp",
+  "w": 30.0,
+  "h": 18.75
+ },
+ "layers": {
+  "desk": {
+   "u": 4.022046625614166,
+   "v": 2.1926874294877052,
+   "w": 3.2053570604324344,
+   "h": 2.6280838161706925,
+   "depth": -5.2,
+   "idle": "cut_desk_idle.webp",
+   "busy": "cut_desk_busy.webp"
+  },
+  "lookout": {
+   "u": -0.9545914828777313,
+   "v": 3.452744521200657,
+   "w": 4.6026404356956485,
+   "h": 3.0979353100061418,
+   "depth": -9.600000000000001,
+   "idle": "cut_lookout_idle.webp",
+   "busy": "cut_lookout_busy.webp"
+  },
+  "library": {
+   "u": 6.691000163555145,
+   "v": -0.13269810006022453,
+   "w": 3.432379231452942,
+   "h": 3.4710881397128106,
+   "depth": 1.2999999999999998,
+   "idle": "cut_library_idle.webp",
+   "busy": "cut_library_busy.webp"
+  },
+  "studio": {
+   "u": -5.441184192895889,
+   "v": 2.1123770624399185,
+   "w": 3.577335641384125,
+   "h": 3.7814079880714417,
+   "depth": -4.199999999999999,
+   "idle": "cut_studio_idle.webp",
+   "busy": "cut_studio_busy.webp"
+  },
+  "post": {
+   "u": 3.249855637550354,
+   "v": -2.4273921735584736,
+   "w": 3.476945028305054,
+   "h": 3.3548937276005746,
+   "depth": 7.199999999999999,
+   "idle": "cut_post_idle.webp",
+   "busy": "cut_post_busy.webp"
+  },
+  "market": {
+   "u": -4.778531938791275,
+   "v": -1.26062398776412,
+   "w": 3.544997141361237,
+   "h": 3.3313741073012353,
+   "depth": 4.3999999999999995,
+   "idle": "cut_market_idle.webp",
+   "busy": "cut_market_busy.webp"
+  },
+  "board": {
+   "u": 2.2351741790771484e-06,
+   "v": -0.11069560423493385,
+   "w": 2.6600004887580875,
+   "h": 2.238831026852131,
+   "depth": 0.0,
+   "idle": "cut_board_idle.webp"
+  }
+ },
+ "sprites": {
+  "cellPx": 256,
+  "world": 3.0,
+  "anchor": [
+   0.5,
+   0.26
+  ],
+  "cols": 11,
+  "rows": 10,
+  "clips": {
+   "walk": {
+    "start": 0,
+    "dirs": 8,
+    "frames": 6,
+    "fps": 10
+   },
+   "idle": {
+    "start": 48,
+    "dirs": 4,
+    "frames": 3,
+    "fps": 2
+   },
+   "working": {
+    "start": 60,
+    "dirs": 4,
+    "frames": 3,
+    "fps": 6
+   },
+   "waiting": {
+    "start": 72,
+    "dirs": 4,
+    "frames": 3,
+    "fps": 3
+   },
+   "blocked": {
+    "start": 84,
+    "dirs": 4,
+    "frames": 3,
+    "fps": 3
+   },
+   "celebrating": {
+    "start": 96,
+    "dirs": 4,
+    "frames": 3,
+    "fps": 8
+   }
+  },
+  "sheets": {
+   "pip": "resident_pip.webp",
+   "juno": "resident_juno.webp",
+   "scout": "resident_scout.webp",
+   "bea": "resident_bea.webp"
+  }
+ }
+}

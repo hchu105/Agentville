@@ -82,17 +82,12 @@ def build_resident(rid):
         limb(0.06, 0.05, 0.34, legs, kn)
         box((0.09, 0.07, 0.21), (0, -0.335, 0.04), shoe, 0.03, kn)
     # the orange "needs you" sign keeps its meaning from the old residents
-    r['sign'] = sg = empty((0.0, -0.26, 0.02), parent=r['elr'])
-    sg.rotation_euler = (math.pi, 0, 0)
-    cyl(0.009, 0.009, 0.72, (0, 0.2, 0), mat('#8A8784', 0.3, metal=1.0), sg, seg=8)
-    box((0.3, 0.26, 0.02), (0, 0.62, 0), mat('#FF5A1F', 0.4), 0.012, sg)
-    box((0.04, 0.12, 0.01), (0, 0.65, 0.014), mat('#FFFFFF', 0.4), 0.003, sg)
-    box((0.04, 0.04, 0.01), (0, 0.55, 0.014), mat('#FFFFFF', 0.4), 0.003, sg)
+    r['sign'] = sg = empty((0.3, 0, 0.1), parent=root)
+    cyl(0.011, 0.011, 1.75, (0, 0.98, 0), mat('#8A8784', 0.3, metal=1.0), sg, seg=8)
+    box((0.46, 0.4, 0.025), (0, 1.76, 0), mat('#FF5A1F', 0.4), 0.014, sg)
+    box((0.055, 0.17, 0.01), (0, 1.8, 0.016), mat('#FFFFFF', 0.4), 0.004, sg)
+    box((0.055, 0.055, 0.01), (0, 1.65, 0.016), mat('#FFFFFF', 0.4), 0.004, sg)
     return r
-
-
-def _x(o, v):
-    o.rotation_euler = (v, 0, 0)
 
 
 def pose(r, clip, t, heading):
@@ -122,7 +117,7 @@ def pose(r, clip, t, heading):
         er = 1.1 - math.sin(p) * 0.15
         lean = 0.12
     elif clip == 'waiting':
-        sr, er, zr = 1.15, 1.25, -0.22
+        sr, er, zr = 0.75, 1.0, -0.24
         bob = math.sin(p) * 0.006
     elif clip == 'blocked':
         sl, sr, el, er = 0.5, 2.5, 1.1, 2.0
