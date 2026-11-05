@@ -1,1 +1,0 @@
-{"root":["./src/App.tsx","./src/main.tsx","./src/scene/Agent.tsx","./src/scene/Buildings.tsx","./src/scene/Village.tsx","./src/scene/materials.tsx","./src/sim/data.ts","./src/sim/store.ts","./src/sim/types.ts","./src/ui/Controls.tsx","./src/ui/Panels.tsx","./src/ui/sound.ts"],"version":"5.9.3"}
