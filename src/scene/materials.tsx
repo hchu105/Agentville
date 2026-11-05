@@ -159,3 +159,78 @@ export function Ceramic({ color }: { color: string }) {
 export function Glow({ color, intensity = 2 }: { color: string; intensity?: number }) {
   return <meshStandardMaterial color={color} emissive={color} emissiveIntensity={intensity} toneMapped={false} />
 }
+
+// ───────── Materials for people and soft furnishings ─────────
+
+/** Woven fabric: matte with a soft sheen at grazing angles. Used for clothes and upholstery. */
+export function Fabric({ color, sheen = 0.6, repeat = 4 }: { color: string; sheen?: number; repeat?: number }) {
+  const tex = useTex(makeNoise, repeat)
+  return (
+    <meshPhysicalMaterial
+      color={color}
+      roughness={0.92}
+      bumpMap={tex}
+      bumpScale={0.25}
+      sheen={sheen}
+      sheenRoughness={0.7}
+      sheenColor={'#ffffff'}
+    />
+  )
+}
+
+export function Skin({ color }: { color: string }) {
+  return <meshPhysicalMaterial color={color} roughness={0.62} sheen={0.35} sheenRoughness={0.5} sheenColor={'#ffd9c4'} />
+}
+
+export function Hair({ color }: { color: string }) {
+  const tex = useTex(makeBrush, 3)
+  return <meshPhysicalMaterial color={color} roughness={0.55} roughnessMap={tex} bumpMap={tex} bumpScale={0.6} sheen={0.5} sheenColor={'#ffffff'} />
+}
+
+export function Plain({ color, rough = 0.8 }: { color: string; rough?: number }) {
+  return <meshStandardMaterial color={color} roughness={rough} />
+}
+
+const rugCache = new Map<string, THREE.CanvasTexture>()
+
+/** Woven rug texture: checker, stripe or bordered, with fibre noise. */
+export function useRug(kind: 'checker' | 'stripe' | 'border' | 'plain', a: string, b: string, cells = 8) {
+  return useMemo(() => {
+    const key = `${kind}-${a}-${b}-${cells}`
+    const hit = rugCache.get(key)
+    if (hit) return hit
+    const size = 512
+    const c = document.createElement('canvas')
+    c.width = c.height = size
+    const ctx = c.getContext('2d')!
+    ctx.fillStyle = a
+    ctx.fillRect(0, 0, size, size)
+    ctx.fillStyle = b
+    const step = size / cells
+    if (kind === 'checker') {
+      for (let y = 0; y < cells; y++) for (let x = 0; x < cells; x++) if ((x + y) % 2) ctx.fillRect(x * step, y * step, step, step)
+    } else if (kind === 'stripe') {
+      for (let x = 0; x < cells; x += 2) ctx.fillRect(x * step, 0, step * 0.5, size)
+    } else if (kind === 'border') {
+      ctx.lineWidth = size * 0.035
+      ctx.strokeStyle = b
+      ctx.strokeRect(size * 0.07, size * 0.07, size * 0.86, size * 0.86)
+      ctx.lineWidth = size * 0.012
+      ctx.strokeRect(size * 0.13, size * 0.13, size * 0.74, size * 0.74)
+    }
+    // fibre speckle
+    const img = ctx.getImageData(0, 0, size, size)
+    for (let i = 0; i < img.data.length; i += 4) {
+      const n = (Math.random() - 0.5) * 18
+      img.data[i] += n
+      img.data[i + 1] += n
+      img.data[i + 2] += n
+    }
+    ctx.putImageData(img, 0, 0)
+    const t = new THREE.CanvasTexture(c)
+    t.colorSpace = THREE.SRGBColorSpace
+    t.anisotropy = 8
+    rugCache.set(key, t)
+    return t
+  }, [kind, a, b, cells])
+}

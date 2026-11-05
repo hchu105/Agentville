@@ -20,7 +20,7 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 ## Design rules
 
 1. **Every game element maps to a real agent state or action.** No idle animations that pretend work is happening.
-2. **Buildings are tools.** An agent walking to the Post Office *is* an email tool call. This makes invisible tool use visible.
+2. **Stations are tools.** An agent walking to the Post Counter *is* an email tool call. This makes invisible tool use visible.
 3. **Friction proportional to consequence.** Low-risk actions just happen. Anything that goes public requires a physical ritual (hold-to-stamp).
 4. **Progression = trust.** Agents earn autonomy from a real approval track record. Two clean approvals in a row unlock the next level. You still choose whether to turn the dial up.
 5. **Village for noticing, ledger for reading.** One switch flips to a calm table of the same data.
@@ -31,36 +31,43 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 
 | In the village | What it really is |
 |---|---|
-| Resident (vinyl toy with role prop) | An agent: role, memory, track record |
-| Building | A connected tool or integration |
-| Walking to a building | A live tool call |
-| Pulsing orange LED on a building | That tool is in use right now |
-| Job board in the town square | The task queue |
-| Resident holding an orange sign at Rae's Desk | Waiting for your approval |
-| Yellow "stuck" bubble | Error or retry |
+| Resident (dressed figure with signature prop) | An agent: role, memory, track record |
+| Station (furniture island) | A connected tool or integration |
+| Walking to a station | A live tool call |
+| Station lamp on, warm pool on the floor | That tool is in use right now |
+| Lounging on the sofa | Free for work |
+| Job board by the sofa | The task queue |
+| Holding up an orange folder at Rae's Desk | Waiting for your approval |
+| Hand on head + yellow bubble | Error or retry |
 | Thermal receipt from the deck printer | A finished deliverable, with cost and time |
 | Autonomy dial (locked detents) | Permission level, earned through trust |
 | Spent counter | Real token or dollar budget |
 
-## Art direction: "a toy inside a precision instrument"
+## Art direction: "the catalog render"
 
-The world is **soft and playful**: vinyl, felt, painted wood, glazed ceramic. The controls are **precise and industrial**: anodized aluminum, rubber keys, a dot-matrix display, one signal orange. The split carries meaning: playful agents, serious consequences.
+**v2, from reference images.** Minimal environments; the characters carry the scene. Think furniture-catalog isometric renders and a team photo shot top-down on seamless paper: people with real proportions, real clothes and one signature prop each, scattered across an open warm-white floor.
 
-**Materials as tokens.** Each has one job:
+- **No world-building.** No terrain, no plinth. The page color *is* the floor. Each place is a small furniture island (rug, a few pieces of furniture, a lamp, a plant) floating in white space.
+- **People first.** Residents are proportioned figures (about 1.75 m) with fabric clothing, skin, hair and a signature prop: Pip's notebook and glasses, Juno's beanie and camera, Scout's bun and backpack, Bea's tote. No faces; posture and silhouette carry identity.
+- **Posture is state.** Lounging on the sofa = free. Typing, reading in the armchair, behind the camera, sorting at the counter = working, at that tool. Holding up an orange folder at Rae's desk = needs you. Hand on head = stuck. Arms up = delivered.
+- **Lights on = tool in use.** Each station's lamp switches on and throws a warm pool on the floor while an agent works there.
+- **Light.** Soft daylight from the upper left, long gentle shadows, strong contact shadows, ambient occlusion. Neutral tone mapping keeps the muted palette true.
+- **Palette.** Warm white floor; muted furniture colors (oak, maroon, mocha, sky, sage, mustard, blush); signal orange (`#FF5A1F`) means exactly one thing: *this needs you or is happening now.*
+
+**Materials as tokens.**
 
 | Material | Used for | Meaning |
 |---|---|---|
-| Soft-matte vinyl (clearcoat + sheen) | Residents | Personality |
-| Felt (sheen + fibre bump) | Ground, foliage, awnings | The world |
-| Painted wood | Buildings | Tools |
-| Frosted acrylic with lit edge | Panels, glass, labels | Information |
-| Anodized aluminum + rubber | Plinth, deck, keys, dial | Your authority |
-| Thermal paper / index cards | Receipts, job cards, documents | Real output |
+| Woven fabric (sheen) | Clothes, sofa, armchair | People and comfort |
+| Skin and hair (soft sheen) | Residents | Identity |
+| Oak, maroon and painted wood | Tables, shelves | Tools |
+| Woven rugs (checker, stripe, border) | Station footprints | Place |
 | Glazed ceramic | The shop's own products | The business itself |
+| Frosted acrylic | UI panels, labels | Information |
+| Anodized aluminum + rubber | Control deck, keys, dial | Your authority |
+| Thermal paper / index cards | Receipts, job cards, documents | Real output |
 
-**3D for identity and moments, 2D for information.** 3D is reserved for the residents, buildings and hero moments (delivery, level-up). Dense information is always flat, readable UI.
-
-**Signal orange** (`#FF5A1F`) means exactly one thing: *this needs you or is happening now.*
+**UI.** Frosted panels float over the set; the hardware deck (dot-matrix counter, rubber keys, receipt printer) stays as the one industrial object, Rae's control surface. Avatars are tiny portraits matching each resident's clothes, skin and hair.
 
 **Type.** Bricolage Grotesque (display), Instrument Sans (body), JetBrains Mono (labels and data), Doto (dot-matrix counters).
 
@@ -69,7 +76,7 @@ The world is **soft and playful**: vinyl, felt, painted wood, glazed ceramic. Th
 ## 3D pipeline without Blender
 
 1. **Now: procedural shapes plus real materials and studio lighting** (this prototype). Physically based materials (clearcoat, sheen, transmission, anisotropic metal), procedural noise textures, a code-built softbox environment, ambient occlusion and selective bloom. Quality comes from materials and light, not polygon count.
-2. **Next: AI image-to-3D for hero characters.** Art-direct residents as 2D turnaround sheets, generate GLB files with an image-to-3D tool (Meshy, Tripo, Rodin), clean up and drop them into `src/scene/Agent.tsx`. Keep the procedural material system so generated models match the world.
+2. **Next: AI image-to-3D for hero characters.** Art-direct residents as 2D turnaround sheets, generate rigged GLB files with an image-to-3D tool (Meshy, Tripo, Rodin), and drop them into `src/scene/Person.tsx`. The pose system already drives named joints (hips, knees, shoulders, elbows, head), so a rigged model can map onto it. Keep the procedural material system so generated models match the world.
 3. **Later: an in-browser path tracer for hero stills** (marketing, onboarding, the "agent minted" moment) using the same scene.
 
 ## Architecture

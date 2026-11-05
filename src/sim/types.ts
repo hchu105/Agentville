@@ -22,9 +22,29 @@ export interface AgentDef {
   name: string
   role: string
   blurb: string
+  /** UI color (matches their top) */
   color: string
   accent: string
-  prop: 'beret' | 'camera' | 'antenna' | 'satchel'
+  look: Look
+}
+
+export type HairStyle = 'curly' | 'short' | 'bun' | 'long' | 'beanie'
+export type Pose = 'stand' | 'walk' | 'lounge' | 'type' | 'read' | 'operate' | 'counter' | 'present' | 'scratch' | 'cheer'
+
+/** How a resident is dressed. Every field is a material choice. */
+export interface Look {
+  skin: string
+  hair: string
+  hairStyle: HairStyle
+  hat?: string
+  top: string
+  sleeves: 'long' | 'short'
+  bottom: string
+  shoes: string
+  glasses?: boolean
+  prop: 'notebook' | 'camera' | 'backpack' | 'tote'
+  propColor: string
+  height: number
 }
 
 export interface AgentState extends AgentDef {

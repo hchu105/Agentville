@@ -8,11 +8,18 @@ export const AUTONOMY_LABELS: Record<Autonomy, { short: string; long: string }> 
   3: { short: 'Just do it', long: 'Works on its own and reports back on a receipt' },
 }
 
-/** A little 2D vinyl badge that matches the 3D resident. */
-export function Avatar({ agent, size = 36 }: { agent: Pick<AgentState, 'color' | 'accent' | 'name'>; size?: number }) {
+/** A tiny portrait that matches the 3D resident: shoulders in their top, skin, hair. */
+export function Avatar({ agent, size = 36 }: { agent: Pick<AgentState, 'color' | 'name' | 'look'>; size?: number }) {
+  const l = agent.look
   return (
-    <span className="avatar" style={{ '--c': agent.color, '--a': agent.accent, width: size, height: size } as CSSProperties} aria-hidden>
-      <span className="avatar__eyes" />
+    <span
+      className={`avatar avatar--${l.hairStyle}`}
+      style={{ '--c': agent.color, '--skin': l.skin, '--hair': l.hat ?? l.hair, width: size, height: size } as CSSProperties}
+      aria-hidden
+    >
+      <span className="avatar__body" />
+      <span className="avatar__head" />
+      <span className="avatar__hair" />
     </span>
   )
 }

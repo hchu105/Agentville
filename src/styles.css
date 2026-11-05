@@ -2,8 +2,8 @@
    panels floating over it, and an anodized hardware deck along the bottom edge. */
 :root {
   /* color */
-  --bg: #e4e0d9;
-  --bg-2: #d3cec5;
+  --bg: #f3f1ed;
+  --bg-2: #ebe8e2;
   --surface: rgba(250, 248, 244, 0.74);
   --surface-solid: #f7f5f1;
   --edge: rgba(255, 255, 255, 0.85);
@@ -42,8 +42,8 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #18181b;
-    --bg-2: #0e0e10;
+    --bg: #1c1b1a;
+    --bg-2: #161514;
     --surface: rgba(32, 32, 36, 0.76);
     --surface-solid: #242428;
     --edge: rgba(255, 255, 255, 0.09);
@@ -64,8 +64,8 @@
   }
 }
 :root[data-theme='dark'] {
-  --bg: #18181b;
-  --bg-2: #0e0e10;
+  --bg: #1c1b1a;
+  --bg-2: #161514;
   --surface: rgba(32, 32, 36, 0.76);
   --surface-solid: #242428;
   --edge: rgba(255, 255, 255, 0.09);
@@ -134,7 +134,7 @@ p {
   display: grid;
   grid-template-rows: auto 1fr auto;
   height: 100%;
-  background: radial-gradient(120% 90% at 55% 40%, var(--bg) 30%, var(--bg-2) 100%);
+  background: var(--bg);
 }
 .topbar {
   display: flex;
@@ -325,29 +325,73 @@ p {
 /* ───────── Avatars & chips ───────── */
 .avatar {
   --c: #888;
-  --a: #333;
+  --skin: #c99;
+  --hair: #222;
   position: relative;
   display: inline-block;
   flex: none;
+  overflow: hidden;
   border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 42%), var(--c);
-  box-shadow: inset -3px -4px 8px rgba(0, 0, 0, 0.22), inset 2px 2px 3px rgba(255, 255, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.15);
+  background: color-mix(in srgb, var(--c) 22%, var(--surface-solid));
+  box-shadow: inset 0 0 0 1px var(--line);
 }
-.avatar__eyes::before,
-.avatar__eyes::after {
+.avatar__body {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -22%;
+  height: 46%;
+  border-radius: 45% 45% 0 0;
+  background: var(--c);
+}
+.avatar__head {
+  position: absolute;
+  left: 33%;
+  top: 22%;
+  width: 34%;
+  height: 38%;
+  border-radius: 50%;
+  background: var(--skin);
+}
+.avatar__hair {
+  position: absolute;
+  left: 31%;
+  top: 18%;
+  width: 38%;
+  height: 22%;
+  border-radius: 50% 50% 30% 30%;
+  background: var(--hair);
+}
+.avatar--curly .avatar__hair {
+  left: 27%;
+  width: 46%;
+  height: 26%;
+  top: 14%;
+  border-radius: 50%;
+}
+.avatar--bun .avatar__hair::after {
   content: '';
   position: absolute;
-  top: 46%;
-  width: 11%;
-  height: 11%;
-  border-radius: 50%;
-  background: #1d1c1a;
-}
-.avatar__eyes::before {
   left: 32%;
+  top: -40%;
+  width: 36%;
+  height: 70%;
+  border-radius: 50%;
+  background: var(--hair);
 }
-.avatar__eyes::after {
-  right: 32%;
+.avatar--long .avatar__hair {
+  height: 46%;
+  border-radius: 50% 50% 20% 20%;
+  z-index: 0;
+}
+.avatar--long .avatar__head {
+  z-index: 1;
+  top: 25%;
+}
+.avatar--beanie .avatar__hair {
+  top: 14%;
+  height: 24%;
+  border-radius: 50% 50% 10% 10%;
 }
 .chip {
   display: inline-flex;
@@ -759,6 +803,12 @@ p {
   transform: translateY(-4px);
   white-space: nowrap;
   user-select: none;
+}
+.bubble {
+  transition: opacity 0.2s;
+}
+.bubble.is-quiet {
+  opacity: 0;
 }
 .bubble__name {
   font: 700 11px/1 var(--display);

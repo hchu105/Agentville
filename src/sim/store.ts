@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { AGENTS, BUILDINGS, JOBS, planCustomJob } from './data'
+import { AGENTS, JOBS, planCustomJob } from './data'
+import { approachOf, homeSpot, queueSpot, route, workSpot, type Place } from './places'
 import type { AgentEvent, AgentState, Autonomy, BuildingId, EventType, JobTemplate, Task } from './types'
 
 export type View = 'village' | 'ledger'
@@ -181,56 +182,26 @@ export interface Pose {
   arrive: (() => void) | null
 }
 
-export const doorOf = (b: BuildingId) => {
-  const d = BUILDINGS.find((x) => x.id === b)!
-  const len = Math.hypot(d.x, d.z)
-  return { x: d.x - (d.x / len) * 1.75, z: d.z - (d.z / len) * 1.75 }
-}
-
-const homeOf = (agentId: string) => {
-  const i = AGENTS.findIndex((a) => a.id === agentId)
-  const ang = (i / AGENTS.length) * Math.PI * 2 + Math.PI / 4
-  return { x: Math.cos(ang) * 2.1, z: Math.sin(ang) * 2.1 }
-}
-
-/** Straight line, but detour around the central job board. */
-function route(from: { x: number; z: number }, to: { x: number; z: number }) {
-  const dx = to.x - from.x
-  const dz = to.z - from.z
-  const len2 = dx * dx + dz * dz || 1
-  const u = Math.max(0, Math.min(1, -(from.x * dx + from.z * dz) / len2))
-  const cx = from.x + dx * u
-  const cz = from.z + dz * u
-  const d = Math.hypot(cx, cz)
-  if (d < 1.4 && u > 0.05 && u < 0.95) {
-    // push the closest point out to radius 1.7
-    let nx = cx
-    let nz = cz
-    if (d < 0.01) {
-      nx = -dz
-      nz = dx
-    }
-    const nl = Math.hypot(nx, nz) || 1
-    return [{ x: (nx / nl) * 1.7, z: (nz / nl) * 1.7 }, to]
-  }
-  return [to]
-}
-
-const WALK_SPEED = 2.4
+const WALK_SPEED = 1.9
 
 export const runtime = {
   poses: Object.fromEntries(
     AGENTS.map((a) => {
-      const h = homeOf(a.id)
-      return [a.id, { x: h.x, z: h.z, heading: Math.atan2(-h.x, -h.z), path: [], timer: 0, arrive: null } as Pose]
+      const h = homeSpot(a.id)
+      return [a.id, { x: h.x, z: h.z, heading: h.heading, path: [], timer: 0, arrive: null } as Pose]
     }),
   ) as Record<string, Pose>,
   celebrate: {} as Record<string, number>,
 
-  walk(agentId: string, to: { x: number; z: number }, arrive: () => void) {
+  /** Walk to a place: route around furniture to just in front of it, step in, then face the right way. */
+  walk(agentId: string, to: Place, arrive: () => void) {
     const p = this.poses[agentId]
-    p.path = route(p, to)
-    p.arrive = arrive
+    const front = approachOf(to, to.seat ? 0.75 : 0.35)
+    p.path = [...route(p, front), { x: to.x, z: to.z }]
+    p.arrive = () => {
+      p.heading = to.heading
+      arrive()
+    }
     useStore.getState()._patchAgent(agentId, { activity: 'walking' })
   },
 
@@ -250,7 +221,7 @@ export const runtime = {
     const st = useStore.getState()
     if (step.kind === 'tool') {
       st._patchAgent(agentId, { bubble: null })
-      this.walk(agentId, doorOf(step.building), () => {
+      this.walk(agentId, workSpot(step.building), () => {
         const g = useStore.getState()
         g._patchAgent(agentId, { activity: 'working', bubble: step.label })
         g._log(agentId, 'tool_start', step.label, { taskId: task.id, building: step.building })
@@ -275,15 +246,14 @@ export const runtime = {
         next()
         return
       }
-      this.walk(agentId, { ...doorOf('desk'), x: doorOf('desk').x + (AGENTS.findIndex((a) => a.id === agentId) - 1.5) * 0.7 }, () => {
+      this.walk(agentId, queueSpot(agentId), () => {
         const g = useStore.getState()
         g._patchAgent(agentId, { activity: 'waiting', bubble: step.label })
         g._patchTask(task.id, { status: 'waiting' })
         g._log(agentId, 'needs_approval', `Needs your OK: ${step.label}`, { taskId: task.id })
-        this.poses[agentId].heading = Math.PI / 4
       })
     } else if (step.kind === 'deliver') {
-      this.walk(agentId, doorOf('desk'), () => {
+      this.walk(agentId, queueSpot(agentId), () => {
         const g = useStore.getState()
         g._patchTask(task.id, { status: 'done', finishedAt: g.clock })
         g._log(agentId, 'done', `Delivered “${task.title}”`, { taskId: task.id })
@@ -297,10 +267,8 @@ export const runtime = {
   },
 
   goHome(agentId: string) {
-    this.walk(agentId, homeOf(agentId), () => {
+    this.walk(agentId, homeSpot(agentId), () => {
       useStore.getState()._patchAgent(agentId, { activity: 'idle', bubble: null })
-      const p = this.poses[agentId]
-      p.heading = Math.atan2(-p.x + 4, -p.z + 4) // face the camera-ish
     })
   },
 
