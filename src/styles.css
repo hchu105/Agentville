@@ -1,4 +1,4 @@
-/* Agentville. Layout concept: a full-bleed diorama on a desk, frosted-acrylic
+/* Agentville. Layout concept: a full-bleed rendered world on a desk, frosted-acrylic
    panels floating over it, and an anodized hardware deck along the bottom edge. */
 :root {
   /* color */
@@ -214,6 +214,7 @@ p {
 .stage__scene {
   position: absolute;
   inset: 0;
+  background: #f2efe9; /* the world is one lit room in both themes, until a night render exists */
   z-index: 0; /* keep 3D-attached labels underneath the panels */
 }
 .view-ledger .stage__scene {
@@ -325,73 +326,21 @@ p {
 /* ───────── Avatars & chips ───────── */
 .avatar {
   --c: #888;
-  --skin: #c99;
-  --hair: #222;
+  --a: #333;
   position: relative;
   display: inline-block;
   flex: none;
+  border-radius: 50%;
   overflow: hidden;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--c) 22%, var(--surface-solid));
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-.avatar__body {
-  position: absolute;
-  left: 18%;
-  right: 18%;
-  bottom: -22%;
-  height: 46%;
-  border-radius: 45% 45% 0 0;
   background: var(--c);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
-.avatar__head {
+.avatar img {
   position: absolute;
-  left: 33%;
-  top: 22%;
-  width: 34%;
-  height: 38%;
-  border-radius: 50%;
-  background: var(--skin);
-}
-.avatar__hair {
-  position: absolute;
-  left: 31%;
-  top: 18%;
-  width: 38%;
-  height: 22%;
-  border-radius: 50% 50% 30% 30%;
-  background: var(--hair);
-}
-.avatar--curly .avatar__hair {
-  left: 27%;
-  width: 46%;
-  height: 26%;
-  top: 14%;
-  border-radius: 50%;
-}
-.avatar--bun .avatar__hair::after {
-  content: '';
-  position: absolute;
-  left: 32%;
-  top: -40%;
-  width: 36%;
-  height: 70%;
-  border-radius: 50%;
-  background: var(--hair);
-}
-.avatar--long .avatar__hair {
-  height: 46%;
-  border-radius: 50% 50% 20% 20%;
-  z-index: 0;
-}
-.avatar--long .avatar__head {
-  z-index: 1;
-  top: 25%;
-}
-.avatar--beanie .avatar__hair {
-  top: 14%;
-  height: 24%;
-  border-radius: 50% 50% 10% 10%;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .chip {
   display: inline-flex;
@@ -584,23 +533,6 @@ p {
 .inspector__head p {
   color: var(--ink-2);
   font-size: 12.5px;
-}
-.paused {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 10px;
-  border-radius: 10px;
-  background: var(--line);
-  font-size: 12px;
-  color: var(--ink-2);
-}
-.paused__dot {
-  width: 8px;
-  height: 8px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--signal);
 }
 .inspector__blurb {
   color: var(--ink-2);
@@ -811,151 +743,165 @@ p {
   padding: 1px 4px;
 }
 
+.paused {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--line);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.paused__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--signal);
+}
+
 /* ───────── 3D-attached labels ───────── */
-/* The info chip floating over each resident: minimal by default, clickable. */
-.chip3d {
-  display: grid;
-  gap: 3px;
-  width: max-content;
-  max-width: 168px;
-  position: relative;
-  padding: 5px 8px 6px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--surface);
-  -webkit-backdrop-filter: blur(12px) saturate(1.3);
-  backdrop-filter: blur(12px) saturate(1.3);
-  box-shadow: inset 0 1px 0 var(--edge), 0 4px 14px rgba(40, 34, 26, 0.12);
-  text-align: left;
-  color: var(--ink);
-  cursor: pointer;
-  transform: translateY(-4px);
-  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.2s;
+/* Anchored at the bottom so everything grows upward, away from the face. */
+.pin {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
   user-select: none;
 }
-.chip3d::after {
-  /* little tail pointing down at the head */
-  content: '';
-  position: absolute;
-  left: 50%;
-  bottom: -4px;
-  width: 7px;
-  height: 7px;
-  margin-left: -3.5px;
-  transform: rotate(45deg);
-  background: inherit;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+.pin__body {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  background: var(--surface-solid);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
 }
-.chip3d:hover,
-.chip3d.is-hover {
-  transform: translateY(-7px);
-  box-shadow: inset 0 1px 0 var(--edge), 0 8px 20px rgba(40, 34, 26, 0.18);
+.pin__icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex: none;
 }
-.chip3d__row {
+.pin__icon svg {
+  width: 14px;
+  height: 14px;
+}
+.pin__name {
+  max-width: 0;
+  overflow: hidden;
+  font: 700 11px/1 var(--display);
+  color: var(--ink);
+  transition: max-width 0.2s, padding 0.2s;
+}
+.pin.is-hover .pin__name {
+  max-width: 80px;
+  padding: 0 6px 0 4px;
+}
+.pin--free .pin__icon {
+  color: var(--ink-3);
+}
+.pin--progress .pin__icon {
+  color: var(--signal);
+}
+.pin__spin {
+  transform-origin: 8px 8px;
+  animation: spin 1.1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.pin--complete .pin__icon {
+  background: var(--ok);
+  color: #fff;
+}
+.pin--needs .pin__icon {
+  background: var(--signal);
+  color: var(--signal-ink);
+}
+.pin--needs .pin__body {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.45);
+  animation: ping 1.4s infinite;
+}
+@keyframes ping {
+  70% {
+    box-shadow: 0 0 0 7px rgba(255, 90, 31, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 90, 31, 0);
+  }
+}
+.pin--blocked .pin__icon {
+  background: var(--warn);
+  color: #fff;
+}
+/* Open: the full story, one click away. */
+.pin.is-open .pin__body {
+  border-radius: 12px;
+  padding: 8px 10px 9px;
+  text-align: left;
+  border-color: var(--signal);
+}
+.pin__card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 210px;
+  white-space: normal;
+}
+.pin__head {
   display: flex;
   align-items: center;
   gap: 6px;
-  white-space: nowrap;
 }
-.chip3d__dot {
-  width: 6px;
-  height: 6px;
-  flex: none;
-  border-radius: 50%;
-  background: var(--ink-3);
+.pin.is-open .pin__name {
+  max-width: none;
+  padding: 0;
+  font-size: 13px;
 }
-.chip3d__name {
-  font: 700 11px/1.1 var(--display);
-}
-.chip3d__state {
-  font: 500 9.5px/1.1 var(--mono);
+.pin__status {
+  margin-left: auto;
+  font: 600 9.5px/1 var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.chip3d__task {
-  max-width: 152px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 10.5px;
-  line-height: 1.25;
+.pin--needs .pin__status {
+  color: var(--signal);
+}
+.pin--complete .pin__status {
+  color: var(--ok);
+}
+.pin__task {
+  font: 600 12px/1.3 var(--body);
+  color: var(--ink);
+}
+.pin__step {
+  font: 500 10.5px/1.35 var(--mono);
   color: var(--ink-2);
 }
-.chip3d__bar {
-  display: block;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--line);
-  overflow: hidden;
+.pin--needs .pin__step {
+  color: var(--signal);
+  font-weight: 700;
 }
-.chip3d__bar i {
-  display: block;
-  height: 100%;
-  background: var(--ink-2);
-  transition: width 0.6s ease;
-}
-.chip3d__more {
-  max-width: 152px;
-  padding-top: 4px;
-  border-top: 1px solid var(--line);
-  font: 400 10px/1.3 var(--mono);
-  color: var(--ink-2);
-  white-space: normal;
-}
-/* free: the quietest version */
-.chip3d--idle {
-  opacity: 0.72;
-  padding: 4px 7px;
-}
-.chip3d--idle:hover,
-.chip3d--idle.is-selected {
-  opacity: 1;
-}
-.chip3d--working .chip3d__dot,
-.chip3d--walking .chip3d__dot {
-  background: var(--signal);
-}
-.chip3d--working .chip3d__dot {
-  animation: pulse 1s infinite;
-}
-.chip3d--working .chip3d__bar i {
-  background: var(--signal);
-}
-.chip3d--waiting {
-  background: var(--signal);
-  border-color: var(--signal);
-  color: var(--signal-ink);
-}
-.chip3d--waiting .chip3d__dot {
-  background: #fff;
-  animation: pulse 0.9s infinite;
-}
-.chip3d--waiting .chip3d__state,
-.chip3d--waiting .chip3d__task,
-.chip3d--waiting .chip3d__more {
-  color: rgba(255, 255, 255, 0.85);
-}
-.chip3d--waiting .chip3d__bar {
-  background: rgba(255, 255, 255, 0.3);
-}
-.chip3d--waiting .chip3d__bar i {
-  background: #fff;
-}
-.chip3d--blocked .chip3d__dot {
-  background: var(--warn);
-}
-.chip3d--blocked .chip3d__state {
-  color: var(--warn);
-}
-.chip3d--celebrating .chip3d__dot {
-  background: var(--ok);
-}
-.chip3d.is-selected {
-  outline: 2px solid var(--signal);
-  outline-offset: 1px;
-  transform: translateY(-7px);
+@media (prefers-reduced-motion: reduce) {
+  .pin__spin,
+  .pin--needs .pin__body {
+    animation: none;
+  }
 }
 .tag {
   display: flex;

@@ -19,68 +19,66 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 
 ## Design rules
 
-1. **Every game element maps to a real agent state or action.** No animation pretends work is happening. Free agents do roam the room (coffee, records, beanbags), but they always read as *free*: casual postures, a quiet grey "Free" chip, never at a tool station.
-8. **Looking never costs work.** Selecting a resident gets its attention: it looks up and waves. A busy agent then goes straight back to work (the job keeps running the whole time); a free one stays put with you until you close its card.
+1. **Every game element maps to a real agent state or action.** No animation pretends work is happening. Free agents roam the room (coffee, records, beanbags), but always read as free: relaxed postures, a quiet Free icon, never at a tool station.
 2. **Stations are tools.** An agent walking to the Post Counter *is* an email tool call. This makes invisible tool use visible.
 3. **Friction proportional to consequence.** Low-risk actions just happen. Anything that goes public requires a physical ritual (hold-to-stamp).
 4. **Progression = trust.** Agents earn autonomy from a real approval track record. Two clean approvals in a row unlock the next level. You still choose whether to turn the dial up.
 5. **Village for noticing, ledger for reading.** One switch flips to a calm table of the same data.
 6. **No dark patterns.** No streaks, energy timers, random rewards or daily-login hooks.
 7. **Mood comes from real signals.** An avatar's expression reflects confidence, blocked or budget, never a made-up emotion.
+8. **Looking never costs work.** Selecting a resident gets its attention: it looks up and waves. A busy agent keeps working the whole time; a free one stays put until you close its card.
 
 ## Mechanics map
 
 | In the village | What it really is |
 |---|---|
-| Resident (dressed figure with signature prop) | An agent: role, memory, track record |
-| Station (furniture island) | A connected tool or integration |
+| Resident (a person dressed in their color) | An agent: role, memory, track record |
+| Station (a furnished corner) | A connected tool or integration |
 | Walking to a station | A live tool call |
-| Station lamp on, warm pool on the floor | That tool is in use right now |
+| Station lamp lit | That tool is in use right now |
 | Roaming: sofa, coffee bar, meeting table, records, beanbags, bench | Free for work |
-| Info chip over the head (status, task, progress bar) | Live state; click for details |
-| Turning to face you and waving | Acknowledging you; work keeps running |
+| Status icon over the head | Free, in progress, complete, needs you or stuck; click for details |
+| Waving at you | Acknowledging you; work keeps running |
 | Job board by the sofa | The task queue |
-| Holding up an orange folder at Rae's Desk | Waiting for your approval |
-| Hand on head + yellow bubble | Error or retry |
+| Resident holding an orange sign at Rae's Desk | Waiting for your approval |
+| Amber stuck icon | Error or retry |
 | Thermal receipt from the deck printer | A finished deliverable, with cost and time |
 | Autonomy dial (locked detents) | Permission level, earned through trust |
 | Spent counter | Real token or dollar budget |
 
-## Art direction: "the catalog render"
+## Art direction: "a calm studio inside a precision instrument"
 
-**v2, from reference images.** Minimal environments; the characters carry the scene. Think furniture-catalog isometric renders and a team photo shot top-down on seamless paper: people with real proportions, real clothes and one signature prop each, scattered across an open warm-white floor.
+The world is **warm and lived-in**: realistic people among soft furniture on a seamless off-white floor, photographed like a design catalogue. The controls are **precise and industrial**: anodized aluminum, rubber keys, a dot-matrix display, one signal orange. The split carries meaning: human agents, serious consequences.
 
-- **No world-building, lots of room.** No terrain, no plinth. The page color *is* the floor, and it's an open canvas you can pan and zoom. Each place is a small furniture island (rug, a few pieces of furniture, a lamp, a plant) floating in white space: six work stations plus seven places to hang out.
-- **People first.** Residents are proportioned figures (about 1.75 m) with fabric clothing, skin, hair and a signature prop: Pip's notebook and glasses, Juno's beanie and camera, Scout's bun and backpack, Bea's tote. No faces; posture and silhouette carry identity.
-- **Posture is state.** Lounging on the sofa = free. Typing, reading in the armchair, behind the camera, sorting at the counter = working, at that tool. Holding up an orange folder at Rae's desk = needs you. Hand on head = stuck. Arms up = delivered.
-- **Lights on = tool in use.** Each station's lamp switches on and throws a warm pool on the floor while an agent works there.
-- **Light.** Soft daylight from the upper left, long gentle shadows, strong contact shadows, ambient occlusion. Neutral tone mapping keeps the muted palette true.
-- **Palette.** Warm white floor; muted furniture colors (oak, maroon, mocha, sky, sage, mustard, blush); signal orange (`#FF5A1F`) means exactly one thing: *this needs you or is happening now.*
-
-**Materials as tokens.**
+**Materials as tokens.** Each has one job:
 
 | Material | Used for | Meaning |
 |---|---|---|
-| Woven fabric (sheen) | Clothes, sofa, armchair | People and comfort |
-| Skin and hair (soft sheen) | Residents | Identity |
-| Oak, maroon and painted wood | Tables, shelves | Tools |
-| Woven rugs (checker, stripe, border) | Station footprints | Place |
-| Glazed ceramic | The shop's own products | The business itself |
-| Frosted acrylic | UI panels, labels | Information |
-| Anodized aluminum + rubber | Control deck, keys, dial | Your authority |
+| Woven fabric and everyday clothes | Residents | Personality |
+| Rugs, soft furnishings, plants | Stations and floor | The world |
+| Oak and painted wood | Station furniture | Tools |
+| Frosted acrylic with lit edge | Panels, glass, labels | Information |
+| Anodized aluminum + rubber | Deck, keys, dial | Your authority |
 | Thermal paper / index cards | Receipts, job cards, documents | Real output |
+| Glazed ceramic | The shop's own products | The business itself |
 
-**UI.** Frosted panels float over the set; the hardware deck (dot-matrix counter, rubber keys, receipt printer) stays as the one industrial object, Rae's control surface. Avatars are tiny portraits matching each resident's clothes, skin and hair.
+**3D for identity and moments, 2D for information.** The rendered world is reserved for the residents, stations and hero moments (delivery, level-up). Dense information is always flat, readable UI.
+
+**Signal orange** (`#FF5A1F`) means exactly one thing: *this needs you or is happening now.*
 
 **Type.** Bricolage Grotesque (display), Instrument Sans (body), JetBrains Mono (labels and data), Doto (dot-matrix counters).
 
 **Sound.** Synthesized clicks, detents, a stamp thunk and receipt-printer chatter. Off by default.
 
-## 3D pipeline without Blender
+## World pipeline
 
-1. **Now: procedural shapes plus real materials and studio lighting** (this prototype). Physically based materials (clearcoat, sheen, transmission, anisotropic metal), procedural noise textures, a code-built softbox environment, ambient occlusion and selective bloom. Quality comes from materials and light, not polygon count.
-2. **Next: AI image-to-3D for hero characters.** Art-direct residents as 2D turnaround sheets, generate rigged GLB files with an image-to-3D tool (Meshy, Tripo, Rodin), and drop them into `src/scene/Person.tsx`. The pose system already drives named joints (hips, knees, shoulders, elbows, head), so a rigged model can map onto it. Keep the procedural material system so generated models match the world.
-3. **Later: an in-browser path tracer for hero stills** (marketing, onboarding, the "agent minted" moment) using the same scene.
+The world is prerendered, not rendered live. Blender Cycles renders one locked orthographic view and the browser composites the results, so soft light, shadows and fabric look the same on every device.
+
+1. **`art/` renders the world.** `render.py` builds stations and residents, and `pack.py` writes web assets and `manifest.json` to `src/assets/world/`. See [art/README.md](../art/README.md).
+2. **Current art is a blockout.** Stations are Blender primitives and residents are mannequins, at final scale and in final positions, so the engine is real while the art is not.
+3. **Next: AI-generated meshes.** Generate stations with Tripo or Rodin and residents with Meshy, then replace the matching builders in `art/world.py` and `art/resident.py`. Use shared Blender materials instead of AI textures, so the set looks like one world.
+
+Nothing in `src/sim` depends on this. Each station's position, stop and gate live in `src/sim/data.ts`.
 
 ## Architecture
 
@@ -99,7 +97,7 @@ Agent runtime ──events──▶ store (event log + state) ──▶ village 
 3. **Hire flow:** a capsule machine where you dial in role, tone and starting autonomy, with a 3D "minting" moment
 4. **Build flow:** connecting an integration = placing a building
 5. **Overnight mode:** real day/night; lit windows mean work in progress; morning receipt roll as the daily digest
-6. **Hero characters** via image-to-3D
+6. **Final art:** AI-generated stations and residents in place of the blockout
 
 ## What we're testing
 

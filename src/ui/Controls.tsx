@@ -8,18 +8,13 @@ export const AUTONOMY_LABELS: Record<Autonomy, { short: string; long: string }> 
   3: { short: 'Just do it', long: 'Works on its own and reports back on a receipt' },
 }
 
-/** A tiny portrait that matches the 3D resident: shoulders in their top, skin, hair. */
-export function Avatar({ agent, size = 36 }: { agent: Pick<AgentState, 'color' | 'name' | 'look'>; size?: number }) {
-  const l = agent.look
+const heads = import.meta.glob('../assets/world/head_*.webp', { eager: true, query: '?url', import: 'default' }) as Record<string, string>
+
+/** Headshot rendered from the same model as the resident, on the resident's color. */
+export function Avatar({ agent, size = 36 }: { agent: Pick<AgentState, 'id' | 'color' | 'accent' | 'name'>; size?: number }) {
   return (
-    <span
-      className={`avatar avatar--${l.hairStyle}`}
-      style={{ '--c': agent.color, '--skin': l.skin, '--hair': l.hat ?? l.hair, width: size, height: size } as CSSProperties}
-      aria-hidden
-    >
-      <span className="avatar__body" />
-      <span className="avatar__head" />
-      <span className="avatar__hair" />
+    <span className="avatar" style={{ '--c': agent.color, '--a': agent.accent, width: size, height: size } as CSSProperties} aria-hidden>
+      <img src={heads[`../assets/world/head_${agent.id}.webp`]} alt="" draggable={false} />
     </span>
   )
 }

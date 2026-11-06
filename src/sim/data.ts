@@ -15,83 +15,32 @@ export const AGENTS: AgentDef[] = [
     name: 'Pip',
     role: 'Copywriter',
     blurb: 'Writes listings, product stories and SEO titles in the Moss & Kiln voice.',
-    color: '#C8643B',
+    color: '#E8664A',
     accent: '#7A2E1F',
-    look: {
-      skin: '#C68E6B',
-      hair: '#2B1D16',
-      hairStyle: 'curly',
-      top: '#C8643B',
-      sleeves: 'long',
-      bottom: '#E6DDCC',
-      shoes: '#F2EFE8',
-      glasses: true,
-      prop: 'notebook',
-      propColor: '#2F3B4C',
-      height: 1,
-    },
   },
   {
     id: 'juno',
     name: 'Juno',
     role: 'Photo Editor',
     blurb: 'Retouches product shots, builds banners and keeps the shop looking consistent.',
-    color: '#5E9A92',
-    accent: '#2F4A47',
-    look: {
-      skin: '#E8C3A4',
-      hair: '#161514',
-      hairStyle: 'beanie',
-      hat: '#2F4A47',
-      top: '#5E9A92',
-      sleeves: 'long',
-      bottom: '#2D2C2A',
-      shoes: '#8A5A3C',
-      prop: 'camera',
-      propColor: '#1E1E1E',
-      height: 1.03,
-    },
+    color: '#3E9C93',
+    accent: '#16433F',
   },
   {
     id: 'scout',
     name: 'Scout',
     role: 'Researcher',
     blurb: 'Watches trends, competitor pricing and search terms across Etsy and the web.',
-    color: '#D9A93A',
+    color: '#E3B23C',
     accent: '#6B4E0E',
-    look: {
-      skin: '#F0CBAA',
-      hair: '#B5562C',
-      hairStyle: 'bun',
-      top: '#D9A93A',
-      sleeves: 'long',
-      bottom: '#55623F',
-      shoes: '#ECE8E0',
-      prop: 'backpack',
-      propColor: '#8B4A35',
-      height: 0.97,
-    },
   },
   {
     id: 'bea',
     name: 'Bea',
     role: 'Mail & Social',
     blurb: 'Drafts newsletters, answers customer messages and schedules posts.',
-    color: '#9497DE',
+    color: '#8C8FE0',
     accent: '#2F3277',
-    look: {
-      skin: '#7A4B32',
-      hair: '#1E1612',
-      hairStyle: 'long',
-      top: '#9497DE',
-      sleeves: 'short',
-      bottom: '#E7E1D5',
-      shoes: '#2A2826',
-      glasses: true,
-      prop: 'tote',
-      propColor: '#C99A5B',
-      height: 1.01,
-    },
   },
 ]
 
@@ -115,20 +64,20 @@ export interface BuildingDef {
   x: number
   z: number
   rot: number
-  /** keep-out radius for walking */
-  r: number
   work: Spot & { pose: WorkPose }
+  /** Height of the floating station label. */
+  labelY: number
 }
 
 // Stations are tools: furniture islands on an open floor.
 // An agent walking to the Post counter is an email tool call.
 export const BUILDINGS: BuildingDef[] = [
-  { id: 'desk', name: "Rae's Desk", tool: 'Approvals & delivery', x: -3.68, z: -3.68, rot: 0, r: 1.9, work: { x: 0, z: 0.8, h: Math.PI, pose: 'counter' } },
-  { id: 'library', name: 'Library', tool: 'Brand guide & docs', x: 3.36, z: -4.32, rot: Math.PI / 2, r: 1.9, work: { x: 0.75, z: 0.3, h: 0, pose: 'read', seat: 0.42 } },
-  { id: 'studio', name: 'Photo Studio', tool: 'Image editing', x: -5.76, z: 0.96, rot: Math.PI / 2, r: 1.9, work: { x: 0, z: 1.45, h: Math.PI, pose: 'operate' } },
-  { id: 'lookout', name: 'Lookout', tool: 'Web & trend research', x: -2.4, z: 4.88, rot: 0, r: 1.7, work: { x: 0.25, z: 0.45, h: Math.PI, pose: 'operate' } },
-  { id: 'post', name: 'Post Counter', tool: 'Email & messages', x: 5.44, z: -0.32, rot: 0, r: 1.8, work: { x: 0, z: 0.65, h: Math.PI, pose: 'counter' } },
-  { id: 'market', name: 'Shop Table', tool: 'Etsy listings', x: 2.24, z: 5.12, rot: Math.PI / 2, r: 1.9, work: { x: 0.2, z: 0.6, h: Math.PI, pose: 'type', seat: 0.46 } },
+  { id: 'desk', name: "Rae's Desk", tool: 'Approvals & delivery', x: -3.68, z: -3.68, rot: 0, work: { x: 0, z: 0.8, h: Math.PI, pose: 'counter' }, labelY: 1.9 },
+  { id: 'library', name: 'Library', tool: 'Brand guide & docs', x: 3.36, z: -4.32, rot: Math.PI / 2, work: { x: 0.75, z: 0.3, h: 0, pose: 'read', seat: 0.42 }, labelY: 2.3 },
+  { id: 'studio', name: 'Photo Studio', tool: 'Image editing', x: -5.76, z: 0.96, rot: Math.PI / 2, work: { x: 0, z: 1.45, h: Math.PI, pose: 'operate' }, labelY: 2.6 },
+  { id: 'lookout', name: 'Lookout', tool: 'Web & trend research', x: -2.4, z: 4.88, rot: 0, work: { x: 0.25, z: 0.45, h: Math.PI, pose: 'operate' }, labelY: 1.7 },
+  { id: 'post', name: 'Post Counter', tool: 'Email & messages', x: 5.44, z: -0.32, rot: 0, work: { x: 0, z: 0.65, h: Math.PI, pose: 'counter' }, labelY: 2.2 },
+  { id: 'market', name: 'Shop Table', tool: 'Etsy listings', x: 2.24, z: 5.12, rot: Math.PI / 2, work: { x: 0.2, z: 0.6, h: Math.PI, pose: 'type', seat: 0.46 }, labelY: 2.3 },
 ]
 
 // Free agents roam between these. Each island has spots to sit, lounge or stand at.
@@ -142,7 +91,6 @@ export interface LeisureDef {
   x: number
   z: number
   rot: number
-  r: number
   spots: LeisureSpot[]
 }
 
@@ -160,7 +108,6 @@ export const LEISURE: LeisureDef[] = [
     x: 0,
     z: 0,
     rot: 0,
-    r: 2.2,
     spots: [-1.12, -0.38, 0.38, 1.12].map((x) => ({ x, z: -0.5, h: 0, seat: 0.44, pose: 'lounge' as const })),
   },
   {
@@ -169,33 +116,30 @@ export const LEISURE: LeisureDef[] = [
     x: -0.4,
     z: -8.6,
     rot: 0,
-    r: 1.6,
     spots: [
       { x: -0.55, z: 0.55, h: Math.PI, pose: 'sip' },
       { x: 0.5, z: 0.55, h: Math.PI, pose: 'browse' },
     ],
   },
-  { id: 'meeting', name: 'Meeting table', x: 8.8, z: -5.2, rot: 0, r: 1.7, spots: ring(4, 0.95, 0.46, 'sit') },
+  { id: 'meeting', name: 'Meeting table', x: 8.8, z: -5.2, rot: 0, spots: ring(4, 0.95, 0.46, 'sit') },
   {
     id: 'records',
     name: 'Record corner',
     x: -9.2,
     z: -4.4,
     rot: Math.PI / 2,
-    r: 1.7,
     spots: [
       { x: -0.3, z: 0.55, h: Math.PI, pose: 'browse' },
       { x: 1.05, z: 0.35, h: -0.5, seat: 0.42, pose: 'lounge' },
     ],
   },
-  { id: 'beanbags', name: 'Beanbags', x: 9.2, z: 4.4, rot: 0, r: 1.6, spots: ring(3, 1.0, 0.3, 'lounge', 0.5) },
+  { id: 'beanbags', name: 'Beanbags', x: 9.2, z: 4.4, rot: 0, spots: ring(3, 1.0, 0.3, 'lounge', 0.5) },
   {
     id: 'nook',
     name: 'Pink sofa',
     x: -7.8,
     z: 7.6,
     rot: 0,
-    r: 1.6,
     spots: [-0.4, 0.4].map((x) => ({ x, z: -0.3, h: 0, seat: 0.44, pose: 'lounge' as const })),
   },
   {
@@ -204,7 +148,6 @@ export const LEISURE: LeisureDef[] = [
     x: 6.4,
     z: 9.6,
     rot: Math.PI / 2,
-    r: 1.4,
     spots: [-0.4, 0.4].map((x) => ({ x, z: 0, h: 0, seat: 0.45, pose: 'sit' as const })),
   },
 ]
