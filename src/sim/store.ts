@@ -324,8 +324,9 @@ export const runtime = {
       const p = this.poses[id]
       const ag = s.agents[id]
 
-      // Selected agents pause and look at you; nothing advances for them.
-      if (s.selectedAgentId === id) continue
+      // Looking never pauses work. A free agent you're looking at stays put
+      // instead of wandering off mid-conversation.
+      if (s.selectedAgentId === id && !ag.taskId && ag.activity === 'idle' && !p.path.length) continue
 
       if (!ag.taskId && ag.activity === 'idle') {
         // pick up queued work

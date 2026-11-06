@@ -75,7 +75,8 @@ function Fit() {
     const cam = camera as THREE.OrthographicCamera
     const narrow = size.width < 820
     const free = narrow ? size.width : Math.max(size.width - 2 * (size.width < 1100 ? 320 : 360), size.width * 0.45)
-    cam.zoom = Math.min(free / (narrow ? 15.5 : 14), size.height / 10)
+    // open on the whole room: every resident and hangout in view; zoom in to inspect
+    cam.zoom = Math.min(free / (narrow ? 25 : 25), size.height / 14.5)
     cam.updateProjectionMatrix()
   }, [camera, size])
   return null

@@ -208,7 +208,9 @@ function Inspector({ id }: { id: string }) {
       </header>
       <p className="paused">
         <span className="paused__dot" />
-        Paused and looking at you. Close this card to let {a.name} carry on.
+        {a.taskId
+          ? `${a.name} looked up to say hi and keeps working while you look.`
+          : `${a.name} stays put while you look. Close this card and ${a.name} wanders off again.`}
       </p>
       <p className="inspector__blurb">{a.blurb}</p>
 

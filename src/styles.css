@@ -599,8 +599,8 @@ p {
   width: 8px;
   height: 8px;
   flex: none;
-  border-radius: 2px;
-  box-shadow: inset 3px 0 0 var(--ink-2), inset -3px 0 0 var(--ink-2);
+  border-radius: 50%;
+  background: var(--signal);
 }
 .inspector__blurb {
   color: var(--ink-2);

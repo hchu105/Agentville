@@ -20,7 +20,7 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 ## Design rules
 
 1. **Every game element maps to a real agent state or action.** No animation pretends work is happening. Free agents do roam the room (coffee, records, beanbags), but they always read as *free*: casual postures, a quiet grey "Free" chip, never at a tool station.
-8. **Looking is an interaction.** Selecting a resident pauses it: it stops, turns to face you, waves, and holds eye contact until you close its card. Attention costs the agent's time, so it should feel like you tapped someone on the shoulder.
+8. **Looking never costs work.** Selecting a resident gets its attention: it looks up and waves. A busy agent then goes straight back to work (the job keeps running the whole time); a free one stays put with you until you close its card.
 2. **Stations are tools.** An agent walking to the Post Counter *is* an email tool call. This makes invisible tool use visible.
 3. **Friction proportional to consequence.** Low-risk actions just happen. Anything that goes public requires a physical ritual (hold-to-stamp).
 4. **Progression = trust.** Agents earn autonomy from a real approval track record. Two clean approvals in a row unlock the next level. You still choose whether to turn the dial up.
@@ -38,7 +38,7 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 | Station lamp on, warm pool on the floor | That tool is in use right now |
 | Roaming: sofa, coffee bar, meeting table, records, beanbags, bench | Free for work |
 | Info chip over the head (status, task, progress bar) | Live state; click for details |
-| Turning to face you and waving | Paused because you're looking |
+| Turning to face you and waving | Acknowledging you; work keeps running |
 | Job board by the sofa | The task queue |
 | Holding up an orange folder at Rae's Desk | Waiting for your approval |
 | Hand on head + yellow bubble | Error or retry |

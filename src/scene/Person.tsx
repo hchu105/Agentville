@@ -238,6 +238,7 @@ export function Person({ agent }: { agent: AgentState }) {
   const poseRef = useRef<Pose>('lounge')
   const seatRef = useRef(0.44)
   const wave = useRef(0)
+  const glanceUp = useRef(0)
   const wasSelected = useRef(false)
   const camDir = useMemo(() => new THREE.Vector3(), [])
 
@@ -251,7 +252,8 @@ export function Person({ agent }: { agent: AgentState }) {
     // what am I doing right now?
     let ps: Pose
     let seat = 0.45
-    if (p.path.length && !selected) ps = 'walk'
+    const moving = p.path.length > 0
+    if (moving) ps = 'walk'
     else if (act === 'idle' && p.leisure) {
       ps = p.leisure.pose
       seat = p.leisure.seat ?? 0.45
@@ -269,24 +271,31 @@ export function Person({ agent }: { agent: AgentState }) {
     }
     const seated = ps === 'lounge' || ps === 'sit' || ps === 'type' || ps === 'read'
 
-    // Selected: stop, turn to the viewer, wave once, keep eye contact.
-    if (selected && !wasSelected.current) wave.current = 1.8
+    // Selected: look up and wave. Work never stops for it: a busy agent gives you
+    // a moment of attention and goes back to it; a free (or waiting) one stays with you.
+    if (selected && !wasSelected.current) {
+      wave.current = 1.8
+      glanceUp.current = 2.6
+    }
     wasSelected.current = selected
     if (wave.current > 0) wave.current -= dt
+    if (glanceUp.current > 0) glanceUp.current -= dt
+    const attention = selected && (act === 'idle' || act === 'waiting' || glanceUp.current > 0)
+    const facing = attention && !seated && !moving
     state.camera.getWorldDirection(camDir)
     const toViewer = Math.atan2(-camDir.x, -camDir.z)
 
     g.position.x = p.x
     g.position.z = p.z
-    const want = selected && !seated ? toViewer : p.heading
+    const want = facing ? toViewer : p.heading
     let dh = want - g.rotation.y
     dh = Math.atan2(Math.sin(dh), Math.cos(dh))
-    g.rotation.y += dh * Math.min(1, dt * (selected ? 6 : 9))
+    g.rotation.y += dh * Math.min(1, dt * (facing ? 6 : 9))
 
-    const tg = target(selected && ps === 'walk' ? 'stand' : ps, seat, t)
+    const tg = target(facing ? 'stand' : ps, seat, t)
+    if (attention) tg.head = -0.28 // look up at the viewer
     if (selected) {
-      tg.head = -0.28 // look up at the viewer
-      if (!seated) {
+      if (facing) {
         tg.lean = 0
         tg.legL = [0, 0]
         tg.legR = [0, 0]
@@ -295,7 +304,7 @@ export function Person({ agent }: { agent: AgentState }) {
       }
       if (wave.current > 0) tg.armR = [-0.15, 2.55 + Math.sin(t * 14) * 0.28, -0.35]
     }
-    const k = ps === 'walk' && !selected ? 1 : 1 - Math.exp(-dt * 8)
+    const k = ps === 'walk' && wave.current <= 0 ? 1 : 1 - Math.exp(-dt * 8)
     const c = cur.current
     const mix = (x: number, y: number) => x + (y - x) * k
     c.hip = mix(c.hip, tg.hip)
@@ -318,7 +327,7 @@ export function Person({ agent }: { agent: AgentState }) {
       // glance around now and then; when selected, find the viewer
       const glance = Math.sin(t * 0.31) * 0.35 + Math.sin(t * 0.83) * 0.12
       let yaw = ps === 'walk' ? 0 : glance * (seated || still ? 1 : 0.3)
-      if (selected) {
+      if (attention) {
         let rel = toViewer - g.rotation.y
         rel = Math.atan2(Math.sin(rel), Math.cos(rel))
         yaw = Math.max(-1.2, Math.min(1.2, rel))
@@ -531,7 +540,7 @@ export function Person({ agent }: { agent: AgentState }) {
           <span className="chip3d__row">
             <span className="chip3d__dot" />
             <span className="chip3d__name">{agent.name}</span>
-            <span className="chip3d__state">{selected ? 'Paused' : CHIP_STATE[a]}</span>
+            <span className="chip3d__state">{CHIP_STATE[a]}</span>
           </span>
           {task && (
             <>
