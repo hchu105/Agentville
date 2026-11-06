@@ -44,7 +44,18 @@ export const AGENTS: AgentDef[] = [
   },
 ]
 
-type Point = { x: number; z: number }
+export type WorkPose = 'type' | 'read' | 'operate' | 'counter'
+
+export interface Spot {
+  /** local to the station, before rotation */
+  x: number
+  z: number
+  /** local heading: 0 faces the station's front (+z), PI faces back into it */
+  h: number
+  seat?: number
+  /** how far in front to line up before stepping in; negative = come from behind (seats around a table) */
+  approach?: number
+}
 
 export interface BuildingDef {
   id: BuildingId
@@ -52,21 +63,99 @@ export interface BuildingDef {
   tool: string
   x: number
   z: number
-  /** Where a resident stands to use this station. */
-  stop: Point
+  rot: number
+  work: Spot & { pose: WorkPose }
+  /** Height of the floating station label. */
   labelY: number
 }
 
-// Buildings are tools, shown as furnished stations. An agent walking to the Post Office is an
-// email tool call. x and z must match STATIONS in art/world.py.
+// Stations are tools: furniture islands on an open floor.
+// An agent walking to the Post counter is an email tool call.
 export const BUILDINGS: BuildingDef[] = [
-  { id: 'desk', name: "Rae's Desk", tool: 'Approvals & delivery', x: 0, z: -5.2, stop: { x: 0, z: -3.95 }, labelY: 1.75 },
-  { id: 'lookout', name: 'Lookout', tool: 'Web & trend research', x: -5.4, z: -4.2, stop: { x: -3.7, z: -4.2 }, labelY: 2.3 },
-  { id: 'library', name: 'Library', tool: 'Brand guide & docs', x: 5.3, z: -4.0, stop: { x: 5, z: -3 }, labelY: 2.4 },
-  { id: 'studio', name: 'Photo Studio', tool: 'Image editing', x: -5.8, z: 1.6, stop: { x: -4.6, z: 1.9 }, labelY: 2.7 },
-  { id: 'post', name: 'Post Office', tool: 'Email & messages', x: 5.8, z: 1.4, stop: { x: 5.2, z: 2.2 }, labelY: 2.3 },
-  { id: 'market', name: 'Shop Stall', tool: 'Etsy listings', x: -1.2, z: 5.6, stop: { x: -1.2, z: 4.4 }, labelY: 2.5 },
+  { id: 'desk', name: "Rae's Desk", tool: 'Approvals & delivery', x: -3.68, z: -3.68, rot: 0, work: { x: 0, z: 0.8, h: Math.PI, pose: 'counter' }, labelY: 1.9 },
+  { id: 'library', name: 'Library', tool: 'Brand guide & docs', x: 3.36, z: -4.32, rot: Math.PI / 2, work: { x: 0.75, z: 0.3, h: 0, pose: 'read', seat: 0.42 }, labelY: 2.3 },
+  { id: 'studio', name: 'Photo Studio', tool: 'Image editing', x: -5.76, z: 0.96, rot: Math.PI / 2, work: { x: 0, z: 1.45, h: Math.PI, pose: 'operate' }, labelY: 2.6 },
+  { id: 'lookout', name: 'Lookout', tool: 'Web & trend research', x: -2.4, z: 4.88, rot: 0, work: { x: 0.25, z: 0.45, h: Math.PI, pose: 'operate' }, labelY: 2.2 },
+  { id: 'post', name: 'Post Counter', tool: 'Email & messages', x: 5.44, z: -0.32, rot: 0, work: { x: 0, z: 0.65, h: Math.PI, pose: 'counter' }, labelY: 2.2 },
+  { id: 'market', name: 'Shop Table', tool: 'Etsy listings', x: 2.24, z: 5.12, rot: Math.PI / 2, work: { x: 0.2, z: 0.6, h: Math.PI, pose: 'type', seat: 0.46 }, labelY: 2.3 },
 ]
+
+// Free agents roam between these. Each island has spots to sit, lounge or stand at.
+export type LeisurePose = 'lounge' | 'sit' | 'browse' | 'sip'
+export interface LeisureSpot extends Spot {
+  pose: LeisurePose
+}
+export interface LeisureDef {
+  id: 'lounge' | 'cafe' | 'meeting' | 'records' | 'beanbags' | 'nook' | 'bench'
+  name: string
+  x: number
+  z: number
+  rot: number
+  spots: LeisureSpot[]
+}
+
+const ring = (n: number, radius: number, seat: number, pose: LeisurePose, offset = 0): LeisureSpot[] =>
+  Array.from({ length: n }, (_, i) => {
+    const a = offset + (i / n) * Math.PI * 2
+    // face the centre
+    return { x: Math.sin(a) * radius, z: Math.cos(a) * radius, h: a + Math.PI, seat, pose, approach: -0.6 }
+  })
+
+export const LEISURE: LeisureDef[] = [
+  {
+    id: 'lounge',
+    name: 'Lounge',
+    x: 0,
+    z: 0,
+    rot: 0,
+    spots: [-1.12, -0.38, 0.38, 1.12].map((x) => ({ x, z: -0.5, h: 0, seat: 0.44, pose: 'lounge' as const })),
+  },
+  {
+    id: 'cafe',
+    name: 'Coffee bar',
+    x: -0.4,
+    z: -8.6,
+    rot: 0,
+    spots: [
+      { x: -0.55, z: 0.55, h: Math.PI, pose: 'sip' },
+      { x: 0.5, z: 0.55, h: Math.PI, pose: 'browse' },
+    ],
+  },
+  { id: 'meeting', name: 'Meeting table', x: 8.8, z: -5.2, rot: 0, spots: ring(4, 0.95, 0.46, 'sit') },
+  {
+    id: 'records',
+    name: 'Record corner',
+    x: -9.2,
+    z: -4.4,
+    rot: Math.PI / 2,
+    spots: [
+      { x: -0.3, z: 0.55, h: Math.PI, pose: 'browse' },
+      { x: 1.05, z: 0.35, h: -0.5, seat: 0.42, pose: 'lounge' },
+    ],
+  },
+  { id: 'beanbags', name: 'Beanbags', x: 9.2, z: 4.4, rot: 0, spots: ring(3, 1.0, 0.3, 'lounge', 0.5) },
+  {
+    id: 'nook',
+    name: 'Pink sofa',
+    x: -7.8,
+    z: 7.6,
+    rot: 0,
+    spots: [-0.4, 0.4].map((x) => ({ x, z: -0.3, h: 0, seat: 0.44, pose: 'lounge' as const })),
+  },
+  {
+    id: 'bench',
+    name: 'Bench',
+    x: 6.4,
+    z: 9.6,
+    rot: Math.PI / 2,
+    spots: [-0.4, 0.4].map((x) => ({ x, z: 0, h: 0, seat: 0.45, pose: 'sit' as const })),
+  },
+]
+
+export const LOUNGE = LEISURE[0]
+
+// Agents wait for approval in a row in front of Rae's desk.
+export const DESK_QUEUE: Spot[] = [-0.95, -0.32, 0.32, 0.95].map((x) => ({ x, z: 1.05, h: Math.PI }))
 
 const tool = (building: BuildingId, label: string, seconds: number, cost: number): Step => ({
   kind: 'tool',

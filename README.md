@@ -36,7 +36,10 @@ npm run build:single # one self-contained HTML file in dist-single/agentville.ht
 | `src/scene/view.ts` | The locked camera, shared with `art/` |
 | `src/scene/world.ts` | Loads the rendered assets |
 | `src/scene/Village.tsx` | World image, job-board cards, camera fit |
-| `src/scene/Stations.tsx` | Station cutouts, lit states, labels |
+| `src/scene/Stations.tsx` | Furniture cutouts, lit states, station labels |
+| `src/scene/pan.ts` | Drag to pan, scroll or pinch to zoom |
+| `src/sim/nav.ts` | Collision map and pathfinding |
+| `src/sim/places.ts` | Work spots, the desk queue and hangout seats |
 | `src/scene/Agent.tsx` | Resident sprites and depth order |
 | `art/` | Blender scripts that render everything in `src/assets/world/` |
 | `src/ui/*` | Panels, deck, autonomy dial, hold-to-approve, sounds |

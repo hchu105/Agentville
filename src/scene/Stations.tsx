@@ -4,15 +4,11 @@ import { Html, useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { BUILDINGS, type BuildingDef } from '../sim/data'
 import { buildingBusy, useStore } from '../sim/store'
-import { assetUrl, manifest, prepare } from './world'
-import { orderOf } from './view'
+import { assetUrl, LAYERS, layerOrder, prepare } from './world'
 
-type Layer = { u: number; v: number; w: number; h: number; depth: number; idle: string; busy?: string }
-const layers: Record<string, Layer> = manifest.layers
-
-/** A station is a cutout from the world image, so residents can pass behind it. */
-export function Cutout({ name, busy = false }: { name: string; busy?: boolean }) {
-  const l = layers[name]
+/** One piece of furniture, cut out of the world image so residents can pass behind it. */
+function Cutout({ name, busy }: { name: string; busy: boolean }) {
+  const l = LAYERS[name]
   const idle = useTexture(assetUrl(l.idle), prepare)
   const lit = useTexture(assetUrl(l.busy ?? l.idle), prepare)
   const litMat = useRef<THREE.MeshBasicMaterial>(null)
@@ -20,7 +16,7 @@ export function Cutout({ name, busy = false }: { name: string; busy?: boolean })
     const m = litMat.current
     if (m) m.opacity = THREE.MathUtils.damp(m.opacity, busy ? 1 : 0, 5, dt)
   })
-  const order = orderOf(l.depth)
+  const order = layerOrder(l)
   return (
     <group position={[l.u, l.v, 0]}>
       <mesh renderOrder={order}>
@@ -42,11 +38,7 @@ function Hotspot({ def, busy, waiting }: { def: BuildingDef; busy: boolean; wait
   const [hover, setHover] = useState(false)
   return (
     <group position={[def.x, 0, def.z]}>
-      <mesh
-        position={[0, def.labelY / 2, 0]}
-        onPointerOver={() => setHover(true)}
-        onPointerOut={() => setHover(false)}
-      >
+      <mesh position={[0, def.labelY / 2, 0]} onPointerOver={() => setHover(true)} onPointerOut={() => setHover(false)}>
         <boxGeometry args={[3, def.labelY, 2.4]} />
         <meshBasicMaterial visible={false} />
       </mesh>
@@ -67,12 +59,12 @@ const useBusy = () => {
   return { waiting, isBusy: (id: string) => set.has(id) || (id === 'desk' && waiting > 0) }
 }
 
-export function StationCutouts() {
+export function Furniture() {
   const { isBusy } = useBusy()
   return (
     <>
-      {BUILDINGS.map((b) => (
-        <Cutout key={b.id} name={b.id} busy={isBusy(b.id)} />
+      {Object.keys(LAYERS).map((name) => (
+        <Cutout key={name} name={name} busy={isBusy(LAYERS[name].group)} />
       ))}
     </>
   )

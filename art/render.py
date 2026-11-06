@@ -18,8 +18,9 @@ import bpy
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 from common import *
-from world import STATIONS, build_world
-from resident import CAST, CELL_PX, CELL_WORLD, ANCHOR, CLIPS, HEADINGS, build_resident, pose
+from world import LAYOUT, build_world
+from pieces import footprint, pieces
+from resident import CAST, CELL_PX, CELL_WORLD, ANCHOR, CLIPS, build_resident, headings, pose
 
 OUT = os.path.join(os.path.dirname(__file__), 'out')
 os.makedirs(OUT, exist_ok=True)
@@ -63,23 +64,30 @@ def do_cutouts(px, samples):
     s.render.use_crop_to_border = True
     for o in reg.flat:
         o.is_holdout = True
-    rects = {}
-    for name, objs in reg.groups.items():
-        for other, group in reg.groups.items():
-            for o in group:
-                o.hide_render = other != name
+    bpy.context.view_layer.update()
+    parts = pieces(reg, bpy.context.evaluated_depsgraph_get())
+    every = [o for items in parts.values() for o, _ in items]
+    stations = {st['id'] for st in LAYOUT['stations']}
+    info = {}
+    for name, items in parts.items():
+        objs = {o for o, _ in items}
+        for o in every:
+            o.hide_render = o not in objs
         x0, y0, x1, y1 = crop_of(s, objs)
         s.render.border_min_x, s.render.border_min_y = x0, y0
         s.render.border_max_x, s.render.border_max_y = x1, y1
-        rects[name] = [x0, y0, x1, y1]
+        group = name.rsplit('_', 1)[0] if name != 'board' else 'board'
+        lit = [m for m in reg.lit.get(group, []) if group in stations
+               and any(m.name in [ms.material.name for ms in o.material_slots if ms.material] for o in objs)]
+        info[name] = dict(rect=[x0, y0, x1, y1], group=group, footprint=[round(v, 3) for v in footprint(items)], busy=bool(lit))
         for state in ('idle', 'busy'):
-            if state == 'busy' and name not in reg.lit:
+            if state == 'busy' and not lit:
                 continue
-            for m in reg.lit.get(name, []):
+            for m in lit:
                 m.node_tree.nodes['Principled BSDF'].inputs['Emission Strength'].default_value = 5 if state == 'busy' else 0
-            s.render.filepath = f'{OUT}/cut_{name}_{state}.png'
+            s.render.filepath = f'{OUT}/cut/{name}_{state}.png'
             bpy.ops.render.render(write_still=True)
-    json.dump(rects, open(f'{OUT}/rects.json', 'w'))
+    json.dump(info, open(f'{OUT}/pieces.json', 'w'), indent=1)
 
 
 def sprite_scene():
@@ -107,7 +115,7 @@ def do_sprites(only):
         s = sprite_scene()
         rig = build_resident(rid)
         for clip, spec in CLIPS.items():
-            for d, heading in enumerate(HEADINGS[spec['dirs']]):
+            for d, heading in enumerate(headings(spec)):
                 for f in range(spec['frames']):
                     pose(rig, clip, f / spec['frames'], heading)
                     bpy.context.view_layer.update()

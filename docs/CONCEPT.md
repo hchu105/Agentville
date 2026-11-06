@@ -19,25 +19,29 @@ Later this extends to larger businesses (multiple villages = teams, a region map
 
 ## Design rules
 
-1. **Every game element maps to a real agent state or action.** No idle animations that pretend work is happening.
-2. **Buildings are tools.** An agent walking to the Post Office *is* an email tool call. This makes invisible tool use visible.
+1. **Every game element maps to a real agent state or action.** No animation pretends work is happening. Free agents roam the room (coffee, records, beanbags), but always read as free: relaxed postures, a quiet Free icon, never at a tool station.
+2. **Stations are tools.** An agent walking to the Post Counter *is* an email tool call. This makes invisible tool use visible.
 3. **Friction proportional to consequence.** Low-risk actions just happen. Anything that goes public requires a physical ritual (hold-to-stamp).
 4. **Progression = trust.** Agents earn autonomy from a real approval track record. Two clean approvals in a row unlock the next level. You still choose whether to turn the dial up.
 5. **Village for noticing, ledger for reading.** One switch flips to a calm table of the same data.
 6. **No dark patterns.** No streaks, energy timers, random rewards or daily-login hooks.
 7. **Mood comes from real signals.** An avatar's expression reflects confidence, blocked or budget, never a made-up emotion.
+8. **Looking never costs work.** Selecting a resident gets its attention: it looks up and waves. A busy agent keeps working the whole time; a free one stays put until you close its card.
 
 ## Mechanics map
 
 | In the village | What it really is |
 |---|---|
 | Resident (a person dressed in their color) | An agent: role, memory, track record |
-| Building | A connected tool or integration |
-| Walking to a building | A live tool call |
-| Pulsing orange LED on a building | That tool is in use right now |
-| Job board in the town square | The task queue |
+| Station (a furnished corner) | A connected tool or integration |
+| Walking to a station | A live tool call |
+| Station lamp lit | That tool is in use right now |
+| Roaming: sofa, coffee bar, meeting table, records, beanbags, bench | Free for work |
+| Status icon over the head | Free, in progress, complete, needs you or stuck; click for details |
+| Waving at you | Acknowledging you; work keeps running |
+| Job board by the sofa | The task queue |
 | Resident holding an orange sign at Rae's Desk | Waiting for your approval |
-| Yellow "stuck" bubble | Error or retry |
+| Amber stuck icon | Error or retry |
 | Thermal receipt from the deck printer | A finished deliverable, with cost and time |
 | Autonomy dial (locked detents) | Permission level, earned through trust |
 | Spent counter | Real token or dollar budget |

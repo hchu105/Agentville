@@ -1,12 +1,17 @@
-import { Suspense, useEffect } from 'react'
+import { Suspense } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { useStore } from '../sim/store'
 import { Agent } from './Agent'
-import { Cutout, Hotspots, StationCutouts } from './Stations'
-import { CAM_POS, CAM_TARGET, LAYER, orderOf, VIEW_QUAT } from './view'
-import { assetUrl, manifest, prepare } from './world'
+import { LEISURE } from '../sim/data'
+import { usePanZoom, pan } from './pan'
+import { Furniture, Hotspots } from './Stations'
+import { CAM_POS, CAM_TARGET, LAYER, VIEW_QUAT } from './view'
+import { assetUrl, LAYERS, layerOrder, manifest, prepare, ROOM } from './world'
+
+// Where the job board stands in the lounge. Mirrors BOARD_AT in art/world.py.
+const BOARD_AT = { x: 2.75, z: -0.35 }
 
 /** The prerendered world, drawn flat to the camera. */
 function Plate() {
@@ -23,11 +28,12 @@ function Plate() {
 function BoardCards() {
   const jobs = useStore((s) => s.board.length)
   const cards = Math.min(jobs, 6)
-  const order = orderOf(0) + 0.5
+  const order = layerOrder(LAYERS.board) + 0.5
+  const lounge = LEISURE.find((l) => l.id === 'lounge')!
   return (
-    <group rotation={[0, Math.PI / 4, 0]}>
+    <group position={[lounge.x + BOARD_AT.x, 0, lounge.z + BOARD_AT.z]}>
       {Array.from({ length: cards }, (_, i) => (
-        <group key={i} position={[-0.42 + (i % 3) * 0.42, 1.33 - Math.floor(i / 3) * 0.38, 0.05]} rotation={[0, 0, (i % 2 ? 1 : -1) * 0.06]}>
+        <group key={i} position={[-0.42 + (i % 3) * 0.42, 1.33 - Math.floor(i / 3) * 0.38, 0.04]} rotation={[0, 0, (i % 2 ? 1 : -1) * 0.06]}>
           <mesh renderOrder={order}>
             <planeGeometry args={[0.32, 0.28]} />
             <meshBasicMaterial color="#FAF7F0" transparent depthTest={false} toneMapped={false} />
@@ -53,18 +59,14 @@ function Agents() {
   )
 }
 
-/** Lock the camera and fit the village between the side panels at any size. */
+/** Fit the whole room between the side panels on open; then drag and zoom from there. */
 function Fit() {
-  const { camera, size } = useThree()
-  useEffect(() => {
-    const cam = camera as THREE.OrthographicCamera
-    cam.position.copy(CAM_POS)
-    cam.lookAt(CAM_TARGET)
-    const narrow = size.width < 820
-    const free = narrow ? size.width : Math.max(size.width - 2 * (size.width < 1100 ? 330 : 372), size.width * 0.45)
-    cam.zoom = Math.min(free / 18, size.height / 13.5)
-    cam.updateProjectionMatrix()
-  }, [camera, size])
+  const { size } = useThree()
+  const narrow = size.width < 820
+  const side = narrow ? 0 : size.width < 1100 ? 330 : 372
+  const free = Math.max(size.width - 2 * side, size.width * 0.45)
+  const fit = Math.min(free / (ROOM.u1 - ROOM.u0 + 1), size.height / (ROOM.v1 - ROOM.v0 + 1.5))
+  usePanZoom(fit, { u: 0, v: 0 })
   return null
 }
 
@@ -77,15 +79,16 @@ export function Village() {
       flat
       camera={{ position: CAM_POS.toArray(), near: 0.1, far: 200, zoom: 40 }}
       gl={{ antialias: true, alpha: false, toneMapping: THREE.NoToneMapping }}
-      onPointerMissed={() => select(null)}
+      onPointerMissed={() => {
+        if (!pan.moved) select(null)
+      }}
     >
       <color attach="background" args={[manifest.floor]} />
       <Fit />
       <Suspense fallback={null}>
         <group position={CAM_TARGET} quaternion={VIEW_QUAT}>
           <Plate />
-          <StationCutouts />
-          <Cutout name="board" />
+          <Furniture />
         </group>
         <BoardCards />
         <Agents />

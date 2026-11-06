@@ -12,7 +12,7 @@ from mathutils import Vector
 # Must match src/scene/view.ts.
 CAM_POS = (22.0, 20.0, 22.0)
 CAM_TARGET = (0.0, 0.6, 0.0)
-PLATE_W, PLATE_H = 30.0, 18.75  # world units covered by the world image
+PLATE_W, PLATE_H = 36.0, 22.5  # world units covered by the world image
 FLOOR = '#F4F1EC'
 
 

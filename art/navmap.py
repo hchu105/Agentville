@@ -14,7 +14,7 @@ from mathutils import Vector
 from common import reset
 from world import build_world
 
-CELL, EXTENT = 0.2, 12.0
+CELL, EXTENT = 0.2, 13.0
 HEAD, FLOORISH = 1.7, 0.1
 
 s = reset()
@@ -82,12 +82,5 @@ for o in solid:
         raster(*[(p.x, -p.y) for p in ps])
     ev.to_mesh_clear()
 
-# Footprints decide whether a resident draws in front of or behind each cutout.
-footprints = {}
-for name, group in reg.groups.items():
-    bs = [solid[o] for o in group if o in solid]
-    footprints[name] = [round(v, 3) for v in (min(b[0] for b in bs), max(b[1] for b in bs), min(b[2] for b in bs), max(b[3] for b in bs))]
-
 dst = os.path.join(os.path.dirname(__file__), '..', 'src', 'assets', 'world', 'nav.json')
-json.dump(dict(cell=CELL, extent=EXTENT, rows=[''.join(map(str, r)) for r in grid], footprints=footprints), open(dst, 'w'))
-print(footprints)
+json.dump(dict(cell=CELL, extent=EXTENT, rows=[''.join(map(str, r)) for r in grid]), open(dst, 'w'))

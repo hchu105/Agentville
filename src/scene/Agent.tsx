@@ -5,17 +5,20 @@ import * as THREE from 'three'
 import { runtime, useStore } from '../sim/store'
 import type { Activity, AgentState } from '../sim/types'
 import { StatusPin } from '../ui/StatusPin'
-import { CAM_TARGET, orderOf, toView, VIEW_QUAT } from './view'
-import { assetUrl, CLIPS, manifest, prepare } from './world'
+import { CAM_TARGET, toView, VIEW_QUAT } from './view'
+import { assetUrl, CLIPS, manifest, prepare, residentOrder } from './world'
+import { pan } from './pan'
 
 const S = manifest.sprites
-const CLIP_OF: Record<Activity, string> = {
-  idle: 'idle',
-  walking: 'walk',
-  working: 'working',
-  waiting: 'waiting',
-  blocked: 'blocked',
-  celebrating: 'celebrating',
+const SEATED = new Set(['sit', 'lounge', 'sit_work'])
+
+/** Which clip plays: what they're doing, refined by where they are. */
+function clipOf(a: Activity, p: (typeof runtime.poses)[string]) {
+  if (p.path.length) return 'walk'
+  if (p.wave > 0) return 'wave'
+  if (a === 'waiting' || a === 'blocked' || a === 'celebrating') return a
+  if (a === 'working') return p.pose ?? 'working'
+  return p.pose ?? 'idle'
 }
 const TAU = Math.PI * 2
 const ORANGE = new THREE.Color('#ff5a1f')
@@ -27,6 +30,7 @@ export function Agent({ agent }: { agent: AgentState }) {
   const plane = useRef<THREE.Mesh>(null)
   const ring = useRef<THREE.Mesh>(null)
   const heading = useRef(0)
+  const pinAt = useRef<THREE.Group>(null)
   const [hover, setHover] = useState(false)
   const selected = useStore((s) => s.selectedAgentId === agent.id)
   const select = useStore((s) => s.select)
@@ -50,19 +54,23 @@ export function Agent({ agent }: { agent: AgentState }) {
     dh = Math.atan2(Math.sin(dh), Math.cos(dh))
     heading.current += dh * Math.min(1, dt * 10)
 
-    const clip = CLIPS[CLIP_OF[a]]
-    let h = heading.current
+    const name = clipOf(a, p)
+    const clip = CLIPS[name]
+    let h = heading.current - clip.offset
     if (a === 'celebrating') h += ((1.4 - Math.max(0, runtime.celebrate[agent.id] ?? 0)) / 1.4) * TAU
     const dir = ((Math.round((h / TAU) * clip.dirs) % clip.dirs) + clip.dirs) % clip.dirs
-    const t = state.clock.elapsedTime * (a === 'walking' ? speed : 1)
+    const t = state.clock.elapsedTime * (name === 'walk' ? speed * p.speed : 1)
     const frame = Math.floor(t * clip.fps) % clip.frames
     const cell = clip.start + dir * clip.frames + frame
     tex.offset.set((cell % S.cols) / S.cols, 1 - (Math.floor(cell / S.cols) + 1) / S.rows)
 
     // Feet land on the sim position; the anchor says where feet sit in the cell.
-    const { u, v } = toView(p.x, 0, p.z)
+    // Seated clips sit on a standard seat; lower or raise them to the real one.
+    const lift = SEATED.has(name) ? (p.place?.seat ?? S.seat) - S.seat : 0
+    const { u, v } = toView(p.x, lift, p.z)
+    if (pinAt.current) pinAt.current.position.y = (a === 'waiting' ? 2.6 : 1.95) + lift
     sprite.current.position.set(u - (S.anchor[0] - 0.5) * S.world, v - (S.anchor[1] - 0.5) * S.world, 0)
-    const order = orderOf(p.x + p.z)
+    const order = residentOrder(p.x, p.z)
     if (plane.current) plane.current.renderOrder = order
     if (ring.current) ring.current.renderOrder = order - 0.1
     ground.current.position.set(p.x, 0, p.z)
@@ -82,6 +90,7 @@ export function Agent({ agent }: { agent: AgentState }) {
           position={[0, 0.8, 0]}
           onClick={(e) => {
             e.stopPropagation()
+            if (pan.moved) return
             select(selected ? null : agent.id)
           }}
           onPointerOver={(e) => {
@@ -97,9 +106,11 @@ export function Agent({ agent }: { agent: AgentState }) {
           <cylinderGeometry args={[0.42, 0.42, 1.6, 12]} />
           <meshBasicMaterial visible={false} />
         </mesh>
-        <Html position={[0, a === 'waiting' ? 2.6 : 1.95, 0]} zIndexRange={selected ? [30, 0] : [20, 0]} style={{ pointerEvents: 'none' }}>
+        <group ref={pinAt}>
+        <Html zIndexRange={selected ? [30, 0] : [20, 0]} style={{ pointerEvents: 'none' }}>
           <StatusPin agent={agent} selected={selected} hover={hover} onToggle={() => select(selected ? null : agent.id)} />
         </Html>
+        </group>
       </group>
       <group position={CAM_TARGET} quaternion={VIEW_QUAT}>
         <group ref={sprite}>

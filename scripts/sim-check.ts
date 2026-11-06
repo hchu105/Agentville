@@ -16,6 +16,8 @@ let waited = 0
 let longestStill = 0
 const still: Record<string, number> = {}
 const last: Record<string, { x: number; z: number }> = {}
+const wasClear: Record<string, boolean> = {}
+const roamed = new Set<string>()
 const ids = Object.keys(runtime.poses)
 
 let frames = 0
@@ -37,7 +39,12 @@ while (s().clock < SIM_SECONDS) {
   }
   for (let i = 0; i < ids.length; i++) {
     const p = runtime.poses[ids[i]]
-    if (!walkable(p.x, p.z)) offFloor++
+    // Stepping into furniture is only allowed on the last step into a seat or counter spot.
+    const clear = walkable(p.x, p.z)
+    const sanctioned = p.path[0]?.inside || (!p.path.length && p.place)
+    if (wasClear[ids[i]] && !clear && !sanctioned) offFloor++
+    wasClear[ids[i]] = clear
+    if (p.leisure) roamed.add(p.leisure.island)
     for (let k = i + 1; k < ids.length; k++) {
       const q = runtime.poses[ids[k]]
       closest = Math.min(closest, Math.hypot(p.x - q.x, p.z - q.z))
@@ -53,8 +60,8 @@ while (s().clock < SIM_SECONDS) {
 }
 const tasks = Object.values(s().tasks)
 const done = tasks.filter((t) => t.status === 'done').length
-console.log({ simSeconds: Math.round(s().clock), tasks: tasks.length, done, waited, closest: +closest.toFixed(3), offFloor, longestStill: +longestStill.toFixed(2) })
-const fail = closest < RADIUS * 2 - 0.08 || offFloor > 0 || longestStill > 4 || done < tasks.length - 4
+console.log({ hangoutsVisited: roamed.size, simSeconds: Math.round(s().clock), tasks: tasks.length, done, waited, closest: +closest.toFixed(3), offFloor, longestStill: +longestStill.toFixed(2) })
+const fail = roamed.size < 4 || closest < RADIUS * 2 - 0.08 || offFloor > 0 || longestStill > 4 || done < tasks.length - 4
 if (fail) {
   console.error('FAILED')
   process.exit(1)

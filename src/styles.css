@@ -2,8 +2,8 @@
    panels floating over it, and an anodized hardware deck along the bottom edge. */
 :root {
   /* color */
-  --bg: #e4e0d9;
-  --bg-2: #d3cec5;
+  --bg: #f3f1ed;
+  --bg-2: #ebe8e2;
   --surface: rgba(250, 248, 244, 0.74);
   --surface-solid: #f7f5f1;
   --edge: rgba(255, 255, 255, 0.85);
@@ -42,8 +42,8 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --bg: #18181b;
-    --bg-2: #0e0e10;
+    --bg: #1c1b1a;
+    --bg-2: #161514;
     --surface: rgba(32, 32, 36, 0.76);
     --surface-solid: #242428;
     --edge: rgba(255, 255, 255, 0.09);
@@ -64,8 +64,8 @@
   }
 }
 :root[data-theme='dark'] {
-  --bg: #18181b;
-  --bg-2: #0e0e10;
+  --bg: #1c1b1a;
+  --bg-2: #161514;
   --surface: rgba(32, 32, 36, 0.76);
   --surface-solid: #242428;
   --edge: rgba(255, 255, 255, 0.09);
@@ -134,7 +134,7 @@ p {
   display: grid;
   grid-template-rows: auto 1fr auto;
   height: 100%;
-  background: radial-gradient(120% 90% at 55% 40%, var(--bg) 30%, var(--bg-2) 100%);
+  background: var(--bg);
 }
 .topbar {
   display: flex;
@@ -741,6 +741,24 @@ p {
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 1px 4px;
+}
+
+.paused {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--line);
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.paused__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--signal);
 }
 
 /* ───────── 3D-attached labels ───────── */

@@ -11,11 +11,12 @@ sys.path.insert(0, os.path.dirname(__file__))
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = f'{HERE}/out'
 DST = f'{HERE}/../src/assets/world'
-PLATE_W, PLATE_H = 30.0, 18.75
-STATIONS = dict(desk=(0.0, -5.2), lookout=(-5.4, -4.2), library=(5.3, -4.0), studio=(-5.8, 1.6),
-                post=(5.8, 1.4), market=(-1.2, 5.6), board=(0.0, 0.0))
+PLATE_W, PLATE_H = 36.0, 22.5
 CELL_PX, CELL_WORLD, ANCHOR = 256, 3.0, (0.5, 0.26)
-CLIPS = dict(walk=(8, 6, 7), idle=(4, 3, 2), working=(4, 3, 6), waiting=(4, 3, 3), blocked=(4, 3, 3), celebrating=(4, 3, 8))
+from resident import CLIPS as SPEC
+CLIPS = {k: (v['dirs'], v['frames'], v['fps']) for k, v in SPEC.items()}
+OFFSET = {k: v.get('offset', 0) for k, v in SPEC.items()}
+SEAT = 0.44
 CAST = ['pip', 'juno', 'scout', 'bea']
 os.makedirs(DST, exist_ok=True)
 
@@ -31,25 +32,27 @@ m = m * m * (3 - 2 * m)
 Image.fromarray((im * m + floor * (1 - m)).round().astype(np.uint8)).save(f'{DST}/plate.webp', quality=88, method=6)
 hexf = '#%02x%02x%02x' % tuple(int(round(c)) for c in floor)
 
-# station cutouts
-rects = json.load(open(f'{OUT}/rects.json'))
+# furniture cutouts, one per piece
+info = json.load(open(f'{OUT}/pieces.json'))
 layers = {}
-for name, (x0, y0, x1, y1) in rects.items():
-    s = STATIONS[name]
+for name, p in info.items():
+    x0, y0, x1, y1 = p['rect']
+    fx0, fx1, fz0, fz1 = p['footprint']
     layers[name] = dict(
         u=((x0 + x1) / 2 - 0.5) * PLATE_W, v=((y0 + y1) / 2 - 0.5) * PLATE_H,
-        w=(x1 - x0) * PLATE_W, h=(y1 - y0) * PLATE_H, depth=s[0] + s[1],
+        w=(x1 - x0) * PLATE_W, h=(y1 - y0) * PLATE_H, group=p['group'],
+        footprint=p['footprint'], depth=(fx0 + fx1 + fz0 + fz1) / 2,
         idle=f'cut_{name}_idle.webp',
     )
-    Image.open(f'{OUT}/cut_{name}_idle.png').save(f'{DST}/cut_{name}_idle.webp', quality=90, method=6)
-    if os.path.exists(f'{OUT}/cut_{name}_busy.png'):
-        Image.open(f'{OUT}/cut_{name}_busy.png').save(f'{DST}/cut_{name}_busy.webp', quality=90, method=6)
+    Image.open(f'{OUT}/cut/{name}_idle.png').save(f'{DST}/cut_{name}_idle.webp', quality=90, method=6)
+    if p['busy']:
+        Image.open(f'{OUT}/cut/{name}_busy.png').save(f'{DST}/cut_{name}_busy.webp', quality=90, method=6)
         layers[name]['busy'] = f'cut_{name}_busy.webp'
 
 # resident atlases
 clips, n = {}, 0
 for c, (dirs, frames, fps) in CLIPS.items():
-    clips[c] = dict(start=n, dirs=dirs, frames=frames, fps=fps)
+    clips[c] = dict(start=n, dirs=dirs, frames=frames, fps=fps, offset=OFFSET[c])
     n += dirs * frames
 cols = math.ceil(math.sqrt(n))
 rows = math.ceil(n / cols)
@@ -65,7 +68,7 @@ for rid in CAST:
     sheets[rid] = f'resident_{rid}.webp'
     Image.open(f'{OUT}/heads/{rid}.png').resize((128, 128), Image.LANCZOS).save(f'{DST}/head_{rid}.webp', quality=88)
 
-json.dump(dict(floor=hexf, plate=dict(file='plate.webp', w=PLATE_W, h=PLATE_H), layers=layers,
-               sprites=dict(cellPx=CELL_PX, world=CELL_WORLD, anchor=ANCHOR, cols=cols, rows=rows, clips=clips, sheets=sheets)),
+json.dump(dict(floor=hexf, plate=dict(file='plate.webp', w=PLATE_W, h=PLATE_H, px=w / PLATE_W), layers=layers,
+               sprites=dict(seat=SEAT, cellPx=CELL_PX, world=CELL_WORLD, anchor=ANCHOR, cols=cols, rows=rows, clips=clips, sheets=sheets)),
           open(f'{DST}/manifest.json', 'w'), indent=1)
 print(hexf, n, 'frames per resident')

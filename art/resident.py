@@ -11,10 +11,10 @@ CELL_WORLD = 3.0
 ANCHOR = (0.5, 0.26)  # feet position in the cell, from bottom-left
 
 # Headings use the sim's convention: atan2(dx, dz), so 0 faces +z.
-HEADINGS = {
-    8: [i * math.pi / 4 for i in range(8)],
-    4: [i * math.pi / 2 for i in range(4)],
-}
+def headings(spec):
+    return [spec.get('offset', 0) + i * math.tau / spec['dirs'] for i in range(spec['dirs'])]
+# Seated clips are rendered on a seat this high; the app shifts them for other seats.
+SEAT = 0.44
 CLIPS = {
     'walk': dict(dirs=8, frames=6, fps=7),  # matches stride to WALK_SPEED
     'idle': dict(dirs=4, frames=3, fps=2),
@@ -22,6 +22,13 @@ CLIPS = {
     'waiting': dict(dirs=4, frames=3, fps=3),
     'blocked': dict(dirs=4, frames=3, fps=3),
     'celebrating': dict(dirs=4, frames=3, fps=8),
+    'sit': dict(dirs=4, frames=3, fps=2),
+    'lounge': dict(dirs=4, frames=3, fps=2),
+    'sit_work': dict(dirs=4, frames=3, fps=6),
+    'browse': dict(dirs=4, frames=4, fps=3),
+    'sip': dict(dirs=4, frames=4, fps=2),
+    # one direction only: straight at the camera
+    'wave': dict(dirs=1, frames=6, fps=8, offset=math.pi / 4),
 }
 
 CAST = {
@@ -81,6 +88,8 @@ def build_resident(rid):
         r[f'kn{k}'] = kn = empty((0, -0.37, 0), parent=hp)
         limb(0.06, 0.05, 0.34, legs, kn)
         box((0.09, 0.07, 0.21), (0, -0.335, 0.04), shoe, 0.03, kn)
+    r['cup'] = cup = empty((0, -0.29, 0.03), parent=r['elr'])
+    cyl(0.04, 0.034, 0.1, (0, 0, 0), mat('#EDE3D1', 0.2), cup, seg=20)
     # the orange "needs you" sign keeps its meaning from the old residents
     r['sign'] = sg = empty((0.3, 0, 0.1), parent=root)
     cyl(0.011, 0.011, 1.75, (0, 0.98, 0), mat('#8A8784', 0.3, metal=1.0), sg, seg=8)
@@ -100,9 +109,12 @@ def pose(r, clip, t, heading):
     hl = hr = 0.0
     kl = kr = 0.0
     zl, zr = 0.08, -0.08
-    r['sign'].hide_render = clip != 'waiting'
-    for o in r['sign'].children:
-        o.hide_render = clip != 'waiting'
+    for prop, on in (('sign', clip == 'waiting'), ('cup', clip == 'sip')):
+        r[prop].hide_render = not on
+        for o in r[prop].children:
+            o.hide_render = not on
+    hip_y = 0.76
+    yl = yr = 0.0
     if clip == 'walk':
         hl, hr = math.sin(p) * 0.55, -math.sin(p) * 0.55
         kl, kr = max(0, -math.sin(p + 0.9)) * 0.9 + 0.08, max(0, math.sin(p + 0.9)) * 0.9 + 0.08
@@ -123,6 +135,37 @@ def pose(r, clip, t, heading):
         sl, sr, el, er = 0.5, 2.5, 1.1, 2.0
         zr = -0.3
         lean = -0.04 + math.sin(p) * 0.03
+    elif clip in ('sit', 'lounge', 'sit_work'):
+        hip_y = SEAT + 0.06
+        hl = hr = 1.4 if clip != 'lounge' else 1.25
+        kl = kr = hl
+        yl, yr = 0.08, -0.08
+        lean = {'sit': 0.0, 'lounge': -0.32, 'sit_work': 0.1}[clip] + math.sin(p) * 0.01
+        if clip == 'sit_work':
+            sl, sr = 0.55, 0.55
+            el = 1.0 + math.sin(p) * 0.15
+            er = 1.0 - math.sin(p) * 0.15
+        elif clip == 'lounge':
+            sl, sr, el, er = -0.15, -0.15, 0.5, 0.5
+            zl, zr = 0.35, -0.35
+        else:
+            sl, sr, el, er = 0.35, 0.35, 0.9, 0.9
+    elif clip == 'browse':
+        lean = 0.12
+        sl, el = 0.35, 0.5
+        sr = 0.75 + math.sin(p) * 0.08
+        er = 0.6 + max(0, math.sin(p * 2)) * 0.35
+        r['head'].rotation_euler = (0.25, 0, 0)
+    elif clip == 'sip':
+        sl, el = 0.05, 0.25
+        up = max(0, math.sin(p)) ** 2
+        sr = 0.35 + up * 0.25
+        er = 1.4 + up * 0.9
+        zr = -0.05
+        r['head'].rotation_euler = (-up * 0.15, 0, 0)
+    elif clip == 'wave':
+        sr, er, zr = 0.15, 0.55, -2.55 - math.sin(p) * 0.3
+        sl, el = 0.05, 0.25
     elif clip == 'celebrating':
         h = abs(math.sin(p / 2))
         bob = h * 0.18
@@ -132,9 +175,11 @@ def pose(r, clip, t, heading):
         kl = kr = (1 - h) * 0.3
     # Limbs hang along -Z and the character's front is -Y, so swinging forward
     # is a negative X rotation; knees flex the other way.
-    r['hips'].location = w(0, 0.76 + bob, 0)
-    r['hipl'].rotation_euler = (-hl, 0, 0)
-    r['hipr'].rotation_euler = (-hr, 0, 0)
+    if clip not in ('browse', 'sip'):
+        r['head'].rotation_euler = (0, 0, 0)
+    r['hips'].location = w(0, hip_y + bob, 0)
+    r['hipl'].rotation_euler = (-hl, 0, yl)
+    r['hipr'].rotation_euler = (-hr, 0, yr)
     r['knl'].rotation_euler = (kl, 0, 0)
     r['knr'].rotation_euler = (kr, 0, 0)
     r['chest'].rotation_euler = (lean, 0, 0)
