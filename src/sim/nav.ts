@@ -63,7 +63,9 @@ export function nearestWalkable(p: Pt, avoid: Pt[] = [], gap = 0): Pt {
 }
 
 /** A* across the grid, then pull the path tight so walks read as straight lines. */
-export function findPath(from: Pt, to: Pt, avoid: Pt[] = []): Pt[] {
+export function findPath(from: Pt, to: Pt, avoid?: Pt[]): Pt[]
+export function findPath(from: Pt, to: Pt, avoid: Pt[], strict: true): Pt[] | null
+export function findPath(from: Pt, to: Pt, avoid: Pt[] = [], strict = false): Pt[] | null {
   const standing = (x: number, z: number) => avoid.some((p) => Math.hypot(p.x - x, p.z - z) < RADIUS * 2.4)
   const open = (i: number, j: number) => {
     if (i < 0 || j < 0 || i >= n || j >= n || blocked[idx(i, j)]) return false
@@ -131,7 +133,7 @@ export function findPath(from: Pt, to: Pt, avoid: Pt[] = []): Pt[] {
       }
     }
   }
-  if (!found) return avoid.length ? findPath(from, to) : [end]
+  if (!found) return strict ? null : avoid.length ? findPath(from, to) : [end]
   const raw: Pt[] = []
   for (let c = goal; c !== -1 && c !== idx(si, sj); c = came[c]) {
     const j = Math.floor(c / n)

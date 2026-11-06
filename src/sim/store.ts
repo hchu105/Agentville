@@ -285,7 +285,8 @@ export const runtime = {
     const start = path[0] ?? p
     let goal: Pt
     if (taken) {
-      goal = nearestWalkable(front, this.claimed(agentId), QUEUE_GAP)
+      // Wait off to one side, clear of the way in, so whoever has the spot can leave and the next can reach it.
+      goal = nearestWalkable(front, [...this.claimed(agentId), front, to], QUEUE_GAP)
       path.push(...findPath(start, goal, this.standing(agentId)))
     } else {
       goal = to
@@ -579,15 +580,35 @@ export const runtime = {
       const lost = p.check > 0.25 && !clearLine(p, p.path[0])
       if (lost) p.check = 0
       if (lost || p.stuck > 0.7) {
-        const others = this.standing(id)
         const inside = p.path[p.path.length - 1].inside ? p.path[p.path.length - 1] : null
         let goal = p.goal ?? p.path[p.path.length - 1]
+        const others = this.standing(id)
         // The spot may have been taken by someone standing there now.
         if (!inside && others.some((o) => Math.hypot(o.x - goal.x, o.z - goal.z) < PERSONAL)) {
-          goal = p.goal = nearestWalkable(goal, this.claimed(id), QUEUE_GAP)
+          goal = p.goal = nearestWalkable(goal, [...this.claimed(id), goal], QUEUE_GAP)
         }
         const target = inside ? p.path[p.path.length - 2] ?? nearestWalkable(inside) : goal
-        p.path = [...findPath(p, target, others), ...(inside ? [inside] : [])]
+        const tail = inside ? [inside] : []
+        if (p.stuck <= 0.7) {
+          p.path = [...findPath(p, target, others), ...tail]
+        } else {
+          // Boxed in, usually face to face with someone. Route around everyone close by, moving or not.
+          const near = ids.filter((o) => o !== id && Math.hypot(this.poses[o].x - p.x, this.poses[o].z - p.z) < 3).map((o) => this.poses[o])
+          const around = findPath(p, target, near, true)
+          if (around) p.path = [...around, ...tail]
+          else {
+            // No way round: one of the two steps aside to let the other through.
+            const [blockerId] = ids
+              .filter((o) => o !== id)
+              .sort((a, b) => Math.hypot(this.poses[a].x - p.x, this.poses[a].z - p.z) - Math.hypot(this.poses[b].x - p.x, this.poses[b].z - p.z))
+            const blocker = this.poses[blockerId]
+            if (!blocker.path.length || id > blockerId) {
+              const away = Math.atan2(p.x - blocker.x, p.z - blocker.z)
+              const aside = nearestWalkable({ x: p.x + Math.sin(away) * 1.1, z: p.z + Math.cos(away) * 1.1 }, near, 0.9)
+              p.path = [aside, ...findPath(aside, target, others), ...tail]
+            }
+          }
+        }
         p.stuck = 0
       }
     }

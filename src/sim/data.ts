@@ -75,7 +75,7 @@ export const BUILDINGS: BuildingDef[] = [
   { id: 'desk', name: "Rae's Desk", tool: 'Approvals & delivery', x: -3.68, z: -3.68, rot: 0, work: { x: 0, z: 0.8, h: Math.PI, pose: 'counter' }, labelY: 1.9 },
   { id: 'library', name: 'Library', tool: 'Brand guide & docs', x: 3.36, z: -4.32, rot: Math.PI / 2, work: { x: 0.75, z: 0.3, h: 0, pose: 'read', seat: 0.42 }, labelY: 2.3 },
   { id: 'studio', name: 'Photo Studio', tool: 'Image editing', x: -5.76, z: 0.96, rot: Math.PI / 2, work: { x: 0, z: 1.45, h: Math.PI, pose: 'operate' }, labelY: 2.6 },
-  { id: 'lookout', name: 'Lookout', tool: 'Web & trend research', x: -2.4, z: 4.88, rot: 0, work: { x: 0.25, z: 0.45, h: Math.PI, pose: 'operate' }, labelY: 2.2 },
+  { id: 'lookout', name: 'Lookout', tool: 'Web & trend research', x: -2.4, z: 4.88, rot: 0, work: { x: 0.25, z: 0.45, h: Math.PI, pose: 'operate' }, labelY: 1.7 },
   { id: 'post', name: 'Post Counter', tool: 'Email & messages', x: 5.44, z: -0.32, rot: 0, work: { x: 0, z: 0.65, h: Math.PI, pose: 'counter' }, labelY: 2.2 },
   { id: 'market', name: 'Shop Table', tool: 'Etsy listings', x: 2.24, z: 5.12, rot: Math.PI / 2, work: { x: 0.2, z: 0.6, h: Math.PI, pose: 'type', seat: 0.46 }, labelY: 2.3 },
 ]
