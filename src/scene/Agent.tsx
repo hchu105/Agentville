@@ -4,6 +4,7 @@ import { Html, useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import { runtime, useStore } from '../sim/store'
 import type { Activity, AgentState } from '../sim/types'
+import { StatusPin } from '../ui/StatusPin'
 import { CAM_TARGET, orderOf, toView, VIEW_QUAT } from './view'
 import { assetUrl, CLIPS, manifest, prepare } from './world'
 
@@ -96,11 +97,8 @@ export function Agent({ agent }: { agent: AgentState }) {
           <cylinderGeometry args={[0.42, 0.42, 1.6, 12]} />
           <meshBasicMaterial visible={false} />
         </mesh>
-        <Html position={[0, a === 'waiting' ? 2.85 : 1.8, 0]} center zIndexRange={[20, 0]} style={{ pointerEvents: 'none' }}>
-          <div className={`bubble bubble--${a} ${selected ? 'is-selected' : ''}`}>
-            <span className="bubble__name">{agent.name}</span>
-            {agent.bubble && a !== 'walking' && <span className="bubble__text">{agent.bubble}</span>}
-          </div>
+        <Html position={[0, a === 'waiting' ? 2.6 : 1.95, 0]} zIndexRange={selected ? [30, 0] : [20, 0]} style={{ pointerEvents: 'none' }}>
+          <StatusPin agent={agent} selected={selected} hover={hover} onToggle={() => select(selected ? null : agent.id)} />
         </Html>
       </group>
       <group position={CAM_TARGET} quaternion={VIEW_QUAT}>

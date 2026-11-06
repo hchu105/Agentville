@@ -34,6 +34,8 @@ export interface AgentState extends AgentDef {
   maxAutonomy: Autonomy
   streak: number
   done: number
+  /** Sim time of the last finished job, for the Complete status. */
+  doneAt?: number
 }
 
 export interface Deliverable {

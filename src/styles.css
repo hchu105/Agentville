@@ -744,60 +744,146 @@ p {
 }
 
 /* ───────── 3D-attached labels ───────── */
-.bubble {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  transform: translateY(-4px);
+/* Anchored at the bottom so everything grows upward, away from the face. */
+.pin {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translateX(-50%);
   white-space: nowrap;
   user-select: none;
 }
-.bubble__name {
-  font: 700 11px/1 var(--display);
-  padding: 4px 8px;
+.pin__body {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--line);
   border-radius: 99px;
-  background: var(--surface);
-  box-shadow: inset 0 1px 0 var(--edge), 0 2px 6px rgba(0, 0, 0, 0.12);
-  border: 1px solid var(--line);
-}
-.bubble__text {
-  max-width: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font: 500 10.5px/1.2 var(--mono);
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: var(--surface);
-  border: 1px solid var(--line);
+  background: var(--surface-solid);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
   color: var(--ink-2);
-  order: -1;
+  font: inherit;
+  cursor: pointer;
 }
-.bubble--working .bubble__name::after {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-left: 5px;
+.pin__icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: var(--signal);
-  animation: pulse 0.9s infinite;
-  vertical-align: 1px;
+  flex: none;
 }
-.bubble--waiting .bubble__name {
+.pin__icon svg {
+  width: 14px;
+  height: 14px;
+}
+.pin__name {
+  max-width: 0;
+  overflow: hidden;
+  font: 700 11px/1 var(--display);
+  color: var(--ink);
+  transition: max-width 0.2s, padding 0.2s;
+}
+.pin.is-hover .pin__name {
+  max-width: 80px;
+  padding: 0 6px 0 4px;
+}
+.pin--free .pin__icon {
+  color: var(--ink-3);
+}
+.pin--progress .pin__icon {
+  color: var(--signal);
+}
+.pin__spin {
+  transform-origin: 8px 8px;
+  animation: spin 1.1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.pin--complete .pin__icon {
+  background: var(--ok);
+  color: #fff;
+}
+.pin--needs .pin__icon {
   background: var(--signal);
   color: var(--signal-ink);
+}
+.pin--needs .pin__body {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.45);
+  animation: ping 1.4s infinite;
+}
+@keyframes ping {
+  70% {
+    box-shadow: 0 0 0 7px rgba(255, 90, 31, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 90, 31, 0);
+  }
+}
+.pin--blocked .pin__icon {
+  background: var(--warn);
+  color: #fff;
+}
+/* Open: the full story, one click away. */
+.pin.is-open .pin__body {
+  border-radius: 12px;
+  padding: 8px 10px 9px;
+  text-align: left;
   border-color: var(--signal);
 }
-.bubble--waiting .bubble__text {
+.pin__card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 210px;
+  white-space: normal;
+}
+.pin__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pin.is-open .pin__name {
+  max-width: none;
+  padding: 0;
+  font-size: 13px;
+}
+.pin__status {
+  margin-left: auto;
+  font: 600 9.5px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.pin--needs .pin__status {
+  color: var(--signal);
+}
+.pin--complete .pin__status {
+  color: var(--ok);
+}
+.pin__task {
+  font: 600 12px/1.3 var(--body);
+  color: var(--ink);
+}
+.pin__step {
+  font: 500 10.5px/1.35 var(--mono);
+  color: var(--ink-2);
+}
+.pin--needs .pin__step {
   color: var(--signal);
   font-weight: 700;
 }
-.bubble--blocked .bubble__text {
-  color: var(--warn);
-}
-.bubble.is-selected .bubble__name {
-  outline: 2px solid var(--signal);
+@media (prefers-reduced-motion: reduce) {
+  .pin__spin,
+  .pin--needs .pin__body {
+    animation: none;
+  }
 }
 .tag {
   display: flex;

@@ -9,6 +9,7 @@ python art/render.py cutouts --px 2880 --samples 32
 python art/render.py heads
 python art/render.py sprites
 python art/pack.py
+python art/navmap.py           # collision map; rerun whenever furniture moves
 ```
 
 Delete `art/out/sprites` first if residents changed: finished frames are skipped so a stopped render can resume.
@@ -18,7 +19,7 @@ Delete `art/out/sprites` first if residents changed: finished frames are skipped
 - **Stations:** In `world.py`, replace a builder's contents with an imported GLB parented to `g`. Keep the open side at local -z. Add any glowing material to `reg.lit[name]` to get a lit "busy" state.
 - **Residents:** In `resident.py`, replace `build_resident()` and `pose()` with a rigged character and its actions. Each clip's direction and frame counts live in `CLIPS`, mirrored in `pack.py`.
 - **Height:** Residents stand 1.5 units tall. Everything is scaled to that.
-- **Moving a station:** Update `STATIONS` here, `STATIONS` in `pack.py`, and `x`, `z`, `stop` and `gate` in `src/sim/data.ts`.
+- **Moving a station:** Update `STATIONS` here, `STATIONS` in `pack.py`, and `x`, `z` and `stop` in `src/sim/data.ts`. Then rerun `navmap.py`.
 - **Camera:** `CAM_POS` and `CAM_TARGET` in `common.py` must match `src/scene/view.ts`.
 
 ## Output
@@ -31,3 +32,4 @@ Delete `art/out/sprites` first if residents changed: finished frames are skipped
 | `resident_<id>.webp` | Sprite sheet, with baked shadows |
 | `head_<id>.webp` | Avatar for the panels |
 | `manifest.json` | Where each goes, and the sprite grid |
+| `nav.json` | Furniture seen from above, for collisions and depth order |

@@ -16,7 +16,7 @@ HEADINGS = {
     4: [i * math.pi / 2 for i in range(4)],
 }
 CLIPS = {
-    'walk': dict(dirs=8, frames=6, fps=10),
+    'walk': dict(dirs=8, frames=6, fps=7),  # matches stride to WALK_SPEED
     'idle': dict(dirs=4, frames=3, fps=2),
     'working': dict(dirs=4, frames=3, fps=6),
     'waiting': dict(dirs=4, frames=3, fps=3),

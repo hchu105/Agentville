@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { AGENTS, BUILDINGS, JOBS, planCustomJob } from './data'
+import { clearLine, findPath, nearestWalkable, RADIUS, walkable, type Pt } from './nav'
 import type { AgentEvent, AgentState, Autonomy, BuildingId, EventType, JobTemplate, Task } from './types'
 
 export type View = 'village' | 'ledger'
@@ -176,9 +177,13 @@ export interface Pose {
   x: number
   z: number
   heading: number
-  path: { x: number; z: number }[]
+  path: Pt[]
+  /** Where this resident is headed. Holding it keeps two people off one spot. */
+  goal: Pt | null
   timer: number
   arrive: (() => void) | null
+  stuck: number
+  check: number
 }
 
 export const doorOf = (b: BuildingId) => BUILDINGS.find((x) => x.id === b)!.stop
@@ -189,60 +194,51 @@ const homeOf = (agentId: string) => {
   return { x: Math.cos(ang) * 2.1, z: Math.sin(ang) * 2.1 }
 }
 
-type Pt = { x: number; z: number }
-const gateNear = (p: Pt) => BUILDINGS.find((b) => Math.hypot(b.stop.x - p.x, b.stop.z - p.z) < 1.5)?.gate
-
-/** Leave through the station's gate, cross the plaza, come in through the next gate. */
-function route(from: Pt, to: Pt) {
-  const stops = [gateNear(from), gateNear(to), to].filter((p): p is Pt => !!p)
-  const path: Pt[] = []
-  let at = from
-  for (const p of stops) {
-    path.push(...leg(at, p))
-    at = p
-  }
-  return path
-}
-
-/** Straight line, but detour around the central job board. */
-function leg(from: Pt, to: Pt) {
-  const dx = to.x - from.x
-  const dz = to.z - from.z
-  const len2 = dx * dx + dz * dz || 1
-  const u = Math.max(0, Math.min(1, -(from.x * dx + from.z * dz) / len2))
-  const cx = from.x + dx * u
-  const cz = from.z + dz * u
-  const d = Math.hypot(cx, cz)
-  if (d < 1.4 && u > 0.05 && u < 0.95) {
-    // push the closest point out to radius 1.7
-    let nx = cx
-    let nz = cz
-    if (d < 0.01) {
-      nx = -dz
-      nz = dx
-    }
-    const nl = Math.hypot(nx, nz) || 1
-    return [{ x: (nx / nl) * 1.7, z: (nz / nl) * 1.7 }, to]
-  }
-  return [to]
-}
-
 const WALK_SPEED = 1.7
+const SUBSTEP = 1 / 30
+/** Closest two residents' centres may get: shoulder to shoulder. */
+const PERSONAL = RADIUS * 2
+/** Gap between people waiting at the same station. */
+const QUEUE_GAP = 0.8
+const LOOK_AHEAD = 1.5
 
 export const runtime = {
   poses: Object.fromEntries(
     AGENTS.map((a) => {
       const h = homeOf(a.id)
-      return [a.id, { x: h.x, z: h.z, heading: Math.atan2(-h.x, -h.z), path: [], timer: 0, arrive: null } as Pose]
+      return [a.id, { x: h.x, z: h.z, heading: Math.atan2(-h.x, -h.z), path: [], goal: null, timer: 0, arrive: null, stuck: 0, check: 0 } as Pose]
     }),
   ) as Record<string, Pose>,
   celebrate: {} as Record<string, number>,
 
-  walk(agentId: string, to: { x: number; z: number }, arrive: () => void) {
+  /** People standing still, whom a walker must go around. */
+  standing(except: string): Pt[] {
+    return Object.entries(this.poses)
+      .filter(([id, p]) => id !== except && !p.path.length)
+      .map(([, p]) => p)
+  },
+
+  /** Where everyone else stands now or has claimed, so nobody picks the same spot. */
+  claimed(except: string): Pt[] {
+    return Object.entries(this.poses)
+      .filter(([id]) => id !== except)
+      .map(([, p]) => p.goal ?? p)
+  },
+
+  walk(agentId: string, to: Pt, arrive: () => void) {
     const p = this.poses[agentId]
-    p.path = route(p, to)
+    const spot = nearestWalkable(to, this.claimed(agentId), QUEUE_GAP)
+    p.goal = spot
+    p.path = findPath(p, spot, this.standing(agentId))
     p.arrive = arrive
+    p.stuck = 0
     useStore.getState()._patchAgent(agentId, { activity: 'walking' })
+  },
+
+  face(agentId: string, b: BuildingId) {
+    const p = this.poses[agentId]
+    const d = BUILDINGS.find((x) => x.id === b)!
+    p.heading = Math.atan2(d.x - p.x, d.z - p.z)
   },
 
   /** Start (or continue) the agent's current task at its stepIndex. */
@@ -264,6 +260,7 @@ export const runtime = {
       this.walk(agentId, doorOf(step.building), () => {
         const g = useStore.getState()
         g._patchAgent(agentId, { activity: 'working', bubble: step.label })
+        this.face(agentId, step.building)
         g._log(agentId, 'tool_start', step.label, { taskId: task.id, building: step.building })
         this.poses[agentId].timer = step.seconds
         this.poses[agentId].arrive = () => {
@@ -286,12 +283,12 @@ export const runtime = {
         next()
         return
       }
-      this.walk(agentId, { ...doorOf('desk'), x: doorOf('desk').x + (AGENTS.findIndex((a) => a.id === agentId) - 1.5) * 0.7 }, () => {
+      this.walk(agentId, doorOf('desk'), () => {
         const g = useStore.getState()
         g._patchAgent(agentId, { activity: 'waiting', bubble: step.label })
         g._patchTask(task.id, { status: 'waiting' })
         g._log(agentId, 'needs_approval', `Needs your OK: ${step.label}`, { taskId: task.id })
-        this.poses[agentId].heading = Math.PI / 4
+        this.face(agentId, 'desk')
       })
     } else if (step.kind === 'deliver') {
       this.walk(agentId, doorOf('desk'), () => {
@@ -299,7 +296,7 @@ export const runtime = {
         g._patchTask(task.id, { status: 'done', finishedAt: g.clock })
         g._log(agentId, 'done', `Delivered “${task.title}”`, { taskId: task.id })
         useStore.setState((x) => ({ receipts: [task.id, ...x.receipts], unread: x.unread + 1 }))
-        g._patchAgent(agentId, { activity: 'celebrating', bubble: null, taskId: null, done: g.agents[agentId].done + 1 })
+        g._patchAgent(agentId, { activity: 'celebrating', bubble: null, taskId: null, done: g.agents[agentId].done + 1, doneAt: g.clock })
         this.celebrate[agentId] = 1.4
         this.poses[agentId].timer = 1.4
         this.poses[agentId].arrive = () => this.goHome(agentId)
@@ -337,27 +334,7 @@ export const runtime = {
         }
       }
 
-      if (p.path.length) {
-        const tgt = p.path[0]
-        const dx = tgt.x - p.x
-        const dz = tgt.z - p.z
-        const d = Math.hypot(dx, dz)
-        const stepLen = WALK_SPEED * dt
-        if (d <= stepLen) {
-          p.x = tgt.x
-          p.z = tgt.z
-          p.path.shift()
-          if (!p.path.length) {
-            const cb = p.arrive
-            p.arrive = null
-            cb?.()
-          }
-        } else {
-          p.x += (dx / d) * stepLen
-          p.z += (dz / d) * stepLen
-          p.heading = Math.atan2(dx, dz)
-        }
-      } else if (p.timer > 0) {
+      if (!p.path.length && p.timer > 0) {
         p.timer -= dt
         if (p.timer <= 0) {
           p.timer = 0
@@ -367,6 +344,136 @@ export const runtime = {
         }
       }
       if (this.celebrate[id] > 0) this.celebrate[id] -= dt
+    }
+    const steps = Math.max(1, Math.ceil(dt / SUBSTEP))
+    for (let i = 0; i < steps; i++) this.move(dt / steps)
+  },
+
+  /** One physics step: steer around people, stop at furniture, never overlap. */
+  move(dt: number) {
+    const ids = Object.keys(this.poses)
+    const prev = new Map(ids.map((id) => [id, { x: this.poses[id].x, z: this.poses[id].z }]))
+
+    for (const id of ids) {
+      const p = this.poses[id]
+      if (!p.path.length) continue
+      const tgt = p.path[0]
+      const toX = tgt.x - p.x
+      const toZ = tgt.z - p.z
+      const d = Math.hypot(toX, toZ)
+      const stepLen = WALK_SPEED * dt
+      const last = p.path.length === 1
+      if (d <= Math.max(stepLen, last ? 0.04 : 0.15)) {
+        const clear = ids.every((o) => o === id || Math.hypot(this.poses[o].x - tgt.x, this.poses[o].z - tgt.z) >= PERSONAL)
+        if (clear || !last) {
+          if (clear) {
+            p.x = tgt.x
+            p.z = tgt.z
+          }
+          p.path.shift()
+          if (!p.path.length) {
+            p.goal = null
+            const cb = p.arrive
+            p.arrive = null
+            cb?.()
+          }
+          continue
+        }
+      }
+      const fx = d ? toX / d : 0
+      const fz = d ? toZ / d : 0
+      let vx = fx
+      let vz = fz
+      let pace = 1
+      for (const o of ids) {
+        if (o === id) continue
+        const q = this.poses[o]
+        const ox = q.x - p.x
+        const oz = q.z - p.z
+        const od = Math.hypot(ox, oz)
+        const ahead = (ox * fx + oz * fz) / (od || 1)
+        if (od > LOOK_AHEAD || ahead < 0.2) continue
+        const push = (1 - od / LOOK_AHEAD) * 1.6
+        // Everyone keeps right to pass. Around someone standing, take the nearer side.
+        const side = q.path.length ? 1 : Math.sign(fx * oz - fz * ox) || 1
+        vx += -fz * -side * push
+        vz += fx * -side * push
+        // Same direction: fall in behind them instead of barging past.
+        if (q.path.length && od < 1) {
+          const qt = q.path[0]
+          const ql = Math.hypot(qt.x - q.x, qt.z - q.z) || 1
+          if (((qt.x - q.x) * fx + (qt.z - q.z) * fz) / ql > 0.5) pace = Math.min(pace, (od - PERSONAL) / 0.4)
+        }
+      }
+      const vl = Math.hypot(vx, vz) || 1
+      const step = WALK_SPEED * dt * Math.max(0, Math.min(1, pace))
+      const nx = p.x + (vx / vl) * step
+      const nz = p.z + (vz / vl) * step
+      if (walkable(nx, nz)) {
+        p.x = nx
+        p.z = nz
+      } else if (walkable(nx, p.z)) {
+        p.x = nx
+      } else if (walkable(p.x, nz)) {
+        p.z = nz
+      }
+    }
+
+    // Bodies are solid. Walkers yield; someone working or waiting holds their ground.
+    for (let a = 0; a < ids.length; a++) {
+      for (let b = a + 1; b < ids.length; b++) {
+        const p = this.poses[ids[a]]
+        const q = this.poses[ids[b]]
+        const dx = q.x - p.x
+        const dz = q.z - p.z
+        const d = Math.hypot(dx, dz) || 0.001
+        if (d >= PERSONAL) continue
+        const over = PERSONAL - d
+        const pm = p.path.length ? 1 : 0
+        const qm = q.path.length ? 1 : 0
+        const total = pm + qm
+        if (!total) continue
+        const shift = (o: Pose, share: number, sx: number) => {
+          const nx = o.x + (dx / d) * over * share * sx
+          const nz = o.z + (dz / d) * over * share * sx
+          if (walkable(nx, nz)) {
+            o.x = nx
+            o.z = nz
+          } else {
+            // Pinned against furniture: this one stays put and the other gives way.
+            const from = prev.get(o === p ? ids[a] : ids[b])!
+            o.x = from.x
+            o.z = from.z
+          }
+        }
+        if (pm) shift(p, qm ? 0.5 : 1, -1)
+        if (qm) shift(q, pm ? 0.5 : 1, 1)
+      }
+    }
+
+    for (const id of ids) {
+      const p = this.poses[id]
+      if (!p.path.length) continue
+      const from = prev.get(id)!
+      const mx = p.x - from.x
+      const mz = p.z - from.z
+      const moved = Math.hypot(mx, mz)
+      // Small shoves don't turn anyone around; only real steps set the facing.
+      if (moved > WALK_SPEED * dt * 0.4) p.heading = Math.atan2(mx, mz)
+      p.stuck = moved < WALK_SPEED * dt * 0.25 ? p.stuck + dt : Math.max(0, p.stuck - dt)
+      p.check += dt
+      // Pushed off course or boxed in: think again from here.
+      const lost = p.check > 0.25 && !clearLine(p, p.path[0])
+      if (lost) p.check = 0
+      if (lost || p.stuck > 0.7) {
+        const others = this.standing(id)
+        // The spot may have been taken by someone standing there now.
+        if (p.goal && others.some((o) => Math.hypot(o.x - p.goal!.x, o.z - p.goal!.z) < PERSONAL)) {
+          p.goal = nearestWalkable(p.goal, this.claimed(id), QUEUE_GAP)
+        }
+        p.path = findPath(p, p.goal ?? p.path[p.path.length - 1], others)
+        p.stuck = 0
+      }
     }
   },
 }

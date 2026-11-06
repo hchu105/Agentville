@@ -15,7 +15,7 @@ PLATE_W, PLATE_H = 30.0, 18.75
 STATIONS = dict(desk=(0.0, -5.2), lookout=(-5.4, -4.2), library=(5.3, -4.0), studio=(-5.8, 1.6),
                 post=(5.8, 1.4), market=(-1.2, 5.6), board=(0.0, 0.0))
 CELL_PX, CELL_WORLD, ANCHOR = 256, 3.0, (0.5, 0.26)
-CLIPS = dict(walk=(8, 6, 10), idle=(4, 3, 2), working=(4, 3, 6), waiting=(4, 3, 3), blocked=(4, 3, 3), celebrating=(4, 3, 8))
+CLIPS = dict(walk=(8, 6, 7), idle=(4, 3, 2), working=(4, 3, 6), waiting=(4, 3, 3), blocked=(4, 3, 3), celebrating=(4, 3, 8))
 CAST = ['pip', 'juno', 'scout', 'bea']
 os.makedirs(DST, exist_ok=True)
 
