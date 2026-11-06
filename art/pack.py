@@ -13,6 +13,7 @@ OUT = f'{HERE}/out'
 DST = f'{HERE}/../src/assets/world'
 PLATE_W, PLATE_H = 36.0, 22.5
 CELL_PX, CELL_WORLD, ANCHOR = 256, 3.0, (0.5, 0.26)
+import bpy  # noqa: F401  (bmesh needs bpy loaded first)
 from resident import CLIPS as SPEC
 CLIPS = {k: (v['dirs'], v['frames'], v['fps']) for k, v in SPEC.items()}
 OFFSET = {k: v.get('offset', 0) for k, v in SPEC.items()}
